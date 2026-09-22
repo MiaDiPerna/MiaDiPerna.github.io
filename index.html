@@ -7,22 +7,24 @@
 <style>
   :root {
     --bg: #ffffff;
-    --bg-alt: #f6f7f9;
+    --bg-alt: #f2f5fa;
     --text: #1a1a1a;
     --text-muted: #5b6270;
-    --accent: #2f6fed;
+    --navy: #0c2340;
+    --accent: #0099cc;
     --border: #e4e6eb;
     --radius: 12px;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #14161a;
-      --bg-alt: #1c1f25;
+      --bg: #0b1220;
+      --bg-alt: #10192c;
       --text: #eef0f3;
       --text-muted: #9aa2b1;
-      --accent: #6d9bff;
-      --border: #2a2e37;
+      --navy: #16345e;
+      --accent: #35b6e8;
+      --border: #223353;
     }
   }
 
@@ -36,10 +38,9 @@
     line-height: 1.6;
   }
 
-  header {
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 72px 24px 32px;
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #123a68 55%, var(--accent) 130%);
+    color: #fff;
   }
 
   nav {
@@ -53,29 +54,53 @@
   }
 
   nav a {
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
   }
 
-  nav a:hover { color: var(--accent); }
+  nav a:hover { color: #fff; }
 
-  .eyebrow {
-    color: var(--accent);
+  header {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 56px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  .logo svg { display: block; }
+
+  .header-text .eyebrow {
+    color: #bfe6f5;
     font-weight: 600;
     font-size: 0.9rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    margin: 0 0 12px;
+    margin: 0 0 10px;
   }
 
   h1 {
     font-size: 2.5rem;
-    margin: 0 0 12px;
+    margin: 0 0 10px;
+    color: #fff;
   }
 
   .tagline {
-    font-size: 1.2rem;
-    color: var(--text-muted);
+    font-size: 1.15rem;
+    color: #d7e6f2;
     margin: 0;
     max-width: 60ch;
   }
@@ -93,8 +118,19 @@
   h2 {
     font-size: 1.4rem;
     margin: 0 0 16px;
-    border-bottom: 1px solid var(--border);
+    color: var(--navy);
+    border-bottom: 2px solid var(--accent);
     padding-bottom: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    h2 { color: var(--text); }
+  }
+
+  h3 { color: var(--navy); }
+
+  @media (prefers-color-scheme: dark) {
+    h3 { color: var(--text); }
   }
 
   p { margin: 0 0 12px; }
@@ -108,6 +144,7 @@
   .card {
     background: var(--bg-alt);
     border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
     border-radius: var(--radius);
     padding: 20px;
   }
@@ -123,6 +160,70 @@
     margin: 0;
   }
 
+  .award-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .award-badge {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+  }
+
+  .award-card h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+
+  .award-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-left: 24px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .timeline-item h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+
+  .timeline-item .when {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .timeline-item p {
+    color: var(--text-muted);
+    margin: 4px 0 0;
+  }
+
   .skills {
     display: flex;
     flex-wrap: wrap;
@@ -130,12 +231,11 @@
   }
 
   .skill {
-    background: var(--bg-alt);
-    border: 1px solid var(--border);
+    background: var(--navy);
+    color: #fff;
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 0.9rem;
-    color: var(--text-muted);
   }
 
   footer {
@@ -157,9 +257,13 @@
   }
 
   .links a {
-    color: var(--text);
+    color: var(--navy);
     text-decoration: none;
     border-bottom: 1px solid var(--border);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .links a { color: var(--text); }
   }
 
   .links a:hover { color: var(--accent); border-color: var(--accent); }
@@ -167,18 +271,30 @@
 </head>
 <body>
 
-<nav>
-  <a href="#about">About</a>
-  <a href="#highlights">Highlights</a>
-  <a href="lacrosse.html">Lacrosse</a>
-  <a href="#contact">Contact</a>
-</nav>
+<div class="hero">
+  <nav>
+    <a href="#about">About</a>
+    <a href="#education">Education</a>
+    <a href="#highlights">Highlights</a>
+    <a href="#courses">Courses</a>
+    <a href="#awards">Awards</a>
+    <a href="#lacrosse">Lacrosse</a>
+    <a href="#contact">Contact</a>
+  </nav>
 
-<header>
-  <p class="eyebrow">Business Management &amp; Liberal Arts · Senior at Xavier University</p>
-  <h1>Mia DiPerna</h1>
-  <p class="tagline">Division I student-athlete at Xavier University, studying Business Management and Liberal Arts. Originally from Medina, Ohio.</p>
-</header>
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <text x="20" y="29" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700" fill="#0c2340" text-anchor="middle">X</text>
+      </svg>
+    </div>
+    <div class="header-text">
+      <p class="eyebrow">Business Management &amp; Liberal Arts · Senior at Xavier University</p>
+      <h1>Mia DiPerna</h1>
+      <p class="tagline">Division I student-athlete at Xavier University, studying Business Management and Liberal Arts. Originally from Medina, Ohio.</p>
+    </div>
+  </header>
+</div>
 
 <main>
   <section id="about">
@@ -190,10 +306,31 @@
       in business.
     </p>
     <p>
+      Before Xavier, I completed coursework at Kent State University from 2023
+      to 2025 as a member of the Women's Lacrosse team. That experience shaped
+      the discipline and drive I brought with me when I transferred to Xavier.
+    </p>
+    <p>
       Balancing D1 athletics with a double major has taught me discipline, time
       management, and how to perform under pressure — skills I bring to
       academics, teamwork, and everything in between.
     </p>
+  </section>
+
+  <section id="education">
+    <h2>Education</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <p class="when">2025 – Present</p>
+        <h3>Xavier University</h3>
+        <p>Business Management &amp; Liberal Arts, Division I Student-Athlete.</p>
+      </div>
+      <div class="timeline-item">
+        <p class="when">2023 – 2025</p>
+        <h3>Kent State University</h3>
+        <p>Completed coursework while a member of the Women's Lacrosse team.</p>
+      </div>
+    </div>
   </section>
 
   <section id="highlights">
@@ -238,6 +375,48 @@
 
     <h3 style="margin-top: 32px;">Future MBA Courses</h3>
     <p style="color: var(--text-muted);">Beginning Spring 2027.</p>
+  </section>
+
+  <section id="awards">
+    <h2>Awards &amp; Honors</h2>
+    <div class="award-card">
+      <div class="award-badge" aria-hidden="true">★</div>
+      <div>
+        <h3>IWLCA Academic Honor Roll</h3>
+        <p>Spring 2026 — Intercollegiate Women's Lacrosse Coaches Association.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="lacrosse">
+    <h2>Lacrosse</h2>
+    <p>
+      I've played lacrosse for as long as I can remember. From 2023 to 2025 I
+      competed as a member of the Women's Lacrosse team at Kent State
+      University, and that's the reason I came to Xavier University to
+      continue competing at the Division I level. Between practices, lifts,
+      travel, and games, lacrosse has demanded a level of discipline and time
+      management that's carried over into everything else I do.
+    </p>
+    <p>
+      More than the competition itself, I love what the sport has given me:
+      a team to grow alongside, a reason to push past what I thought I was
+      capable of, and lessons in resilience that no classroom could teach.
+    </p>
+    <div class="cards" style="margin-top: 16px;">
+      <div class="card">
+        <h3>Discipline</h3>
+        <p>Balancing a D1 schedule with a double major means every hour counts.</p>
+      </div>
+      <div class="card">
+        <h3>Teamwork</h3>
+        <p>Learning to trust and lift up teammates, on and off the field.</p>
+      </div>
+      <div class="card">
+        <h3>Resilience</h3>
+        <p>Competing at the highest level means learning to bounce back from setbacks.</p>
+      </div>
+    </div>
   </section>
 
   <section id="skills">
