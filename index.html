@@ -40,6 +40,7 @@
     background: var(--bg);
     color: var(--text);
     line-height: 1.6;
+    overflow-x: hidden;
   }
 
   .hero {
@@ -66,11 +67,11 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 20px;
+    gap: 16px 20px;
     max-width: 780px;
     margin: 0 auto;
-    padding: 24px 24px 0;
-    font-size: 0.95rem;
+    padding: 20px 24px 0;
+    font-size: 0.92rem;
   }
 
   nav a {
@@ -91,7 +92,7 @@
   header {
     max-width: 780px;
     margin: 0 auto;
-    padding: 48px 24px 56px;
+    padding: 40px 24px 48px;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -99,17 +100,51 @@
 
   .logo {
     flex-shrink: 0;
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.5);
   }
 
   .logo svg { display: block; }
+
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .athlete-layout {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .feature-photo {
+    margin: 0;
+  }
+
+  .feature-photo img {
+    width: 100%;
+    display: block;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 24px rgba(12, 35, 64, 0.2);
+  }
+
+  .feature-photo figcaption {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 8px;
+  }
 
   .logo-sm {
     flex-shrink: 0;
@@ -124,23 +159,25 @@
 
   .logo-sm svg { display: block; }
 
+  .header-text { min-width: 0; }
+
   .header-text .eyebrow {
     color: #bfe6f5;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     margin: 0 0 10px;
   }
 
   h1 {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
     margin: 0 0 10px;
     color: #fff;
   }
 
   .tagline {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: #d7e6f2;
     margin: 0;
     max-width: 60ch;
@@ -171,7 +208,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     margin: 0 0 16px;
     color: var(--navy);
     border-bottom: 2px solid var(--accent);
@@ -208,10 +245,53 @@
 
   p { margin: 0 0 12px; }
 
+  .section-intro {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: -6px 0 18px;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .filter-btn {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--accent);
+  }
+
+  .filter-btn.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--navy); }
+  }
+
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 16px;
+  }
+
+  .cards[hidden] {
+    display: none;
   }
 
   .card {
@@ -228,6 +308,16 @@
     box-shadow: 0 10px 24px rgba(12, 35, 64, 0.16);
   }
 
+  .card .when {
+    display: block;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 6px;
+  }
+
   .card h3 {
     margin: 0 0 8px;
     font-size: 1.05rem;
@@ -236,7 +326,28 @@
   .card p {
     color: var(--text-muted);
     font-size: 0.95rem;
-    margin: 0;
+    margin: 0 0 10px;
+  }
+
+  .card p:last-child { margin-bottom: 0; }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .chip {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 2px 9px;
+    border-radius: 999px;
   }
 
   .award-card {
@@ -401,6 +512,23 @@
     pointer-events: auto;
   }
 
+  @media (max-width: 480px) {
+    nav { justify-content: flex-start; gap: 10px 16px; padding: 16px 20px 0; font-size: 0.85rem; }
+    header { flex-direction: column; align-items: flex-start; padding: 32px 20px 36px; gap: 14px; }
+    .logo { width: 52px; height: 52px; }
+    .logo svg { width: 32px; height: 32px; }
+    h1 { font-size: 1.8rem; }
+    .tagline { font-size: 0.98rem; }
+    main { padding: 0 20px 64px; }
+    section { margin-top: 44px; }
+    h2 { font-size: 1.2rem; }
+    .card, .award-card { padding: 16px; }
+    footer { padding: 28px 20px 48px; justify-content: flex-start; }
+    #to-top { right: 14px; bottom: 14px; width: 40px; height: 40px; }
+    .athlete-layout { grid-template-columns: 1fr; }
+    .feature-photo { max-width: 200px; margin: 0 auto; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .js .reveal { opacity: 1; transform: none; transition: none; }
@@ -418,7 +546,6 @@
     <a href="#education">Education</a>
     <a href="#highlights">Highlights</a>
     <a href="#experience">Experience</a>
-    <a href="#projects">Projects</a>
     <a href="#courses">Courses</a>
     <a href="#awards">Awards</a>
     <a href="#student-athlete">Student-Athlete</a>
@@ -426,10 +553,8 @@
   </nav>
 
   <header>
-    <div class="logo" aria-hidden="true">
-      <svg width="40" height="40" viewBox="0 0 40 40">
-        <text x="20" y="29" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-weight="700" fill="#0c2340" text-anchor="middle">X</text>
-      </svg>
+    <div class="logo">
+      <img src="images/mia-headshot.webp" alt="Mia DiPerna, Xavier Women's Lacrosse" width="72" height="72" loading="eager">
     </div>
     <div class="header-text">
       <p class="eyebrow">Business Management &amp; Liberal Arts · Senior at Xavier University</p>
@@ -545,53 +670,74 @@
           <line x1="3" y1="13" x2="21" y2="13"></line>
         </svg>
       </span>
-      Experience
+      Experience &amp; Leadership
     </h2>
-    <div class="timeline">
-      <div class="timeline-item">
-        <p class="when">May 2026 – Present</p>
-        <h3>Youth Camp Counselor, Cincinnati Sports Club</h3>
-        <p>Plan, supervise, and lead teamwork and leadership-based activities for 60+ campers daily; communicate with campers and staff to keep daily operations running smoothly.</p>
+    <p class="section-intro">Filter by category to explore athletics, business, and leadership roles.</p>
+
+    <div class="filter-bar" role="group" aria-label="Filter experience by category">
+      <button type="button" class="filter-btn active" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" class="filter-btn" data-filter="athletics" aria-pressed="false">Athletics</button>
+      <button type="button" class="filter-btn" data-filter="business" aria-pressed="false">Business</button>
+      <button type="button" class="filter-btn" data-filter="leadership" aria-pressed="false">Leadership</button>
+    </div>
+
+    <div class="cards" id="experience-gallery">
+      <div class="card" data-categories="athletics leadership">
+        <span class="when">Aug 2025 – Present</span>
+        <h3>Team Captain, Xavier Women's Lacrosse</h3>
+        <p>Collaborate with coaches and teammates to achieve team goals while leading a Division I program through a season-ending injury.</p>
+        <div class="chip-row"><span class="chip">Athletics</span><span class="chip">Leadership</span></div>
       </div>
-      <div class="timeline-item">
-        <p class="when">May 2023 – Present</p>
+      <div class="card" data-categories="athletics business">
+        <span class="when">May 2023 – Present</span>
         <h3>Regional Manager, University Lacrosse – Cleveland Women's League</h3>
         <p>Manage league operations, scheduling, and event logistics; coordinate communication with players, coaches, and staff; enforce league rules and safety protocols.</p>
+        <div class="chip-row"><span class="chip">Athletics</span><span class="chip">Business</span></div>
       </div>
-      <div class="timeline-item">
-        <p class="when">June 2024 – August 2025</p>
+      <div class="card" data-categories="business leadership">
+        <span class="when">May 2026 – Present</span>
+        <h3>Youth Camp Counselor, Cincinnati Sports Club</h3>
+        <p>Plan, supervise, and lead teamwork and leadership-based activities for 60+ campers daily; communicate with campers and staff to keep daily operations running smoothly.</p>
+        <div class="chip-row"><span class="chip">Business</span><span class="chip">Leadership</span></div>
+      </div>
+      <div class="card" data-categories="business">
+        <span class="when">Aug – Dec 2025</span>
+        <h3>Gem of the Highlands: 5K Marketing Strategy &amp; Promotion</h3>
+        <p>Project Management, Xavier University. Led a project team through planning, task delegation, and timeline management to reach 500 race sign-ups, running digital and in-person marketing campaigns.</p>
+        <div class="chip-row"><span class="chip">Business</span></div>
+      </div>
+      <div class="card" data-categories="business">
+        <span class="when">Jan – May 2026</span>
+        <h3>Management Model</h3>
+        <p>Business Analytics &amp; Information Systems, Xavier University. Optimized a business management model in Excel using scenario and sensitivity analysis to maximize profit.</p>
+        <div class="chip-row"><span class="chip">Business</span></div>
+      </div>
+      <div class="card" data-categories="athletics leadership">
+        <span class="when">June 2024 – Aug 2025</span>
         <h3>Coach, Maxim Lacrosse</h3>
         <p>Coached high school and middle school club teams through practices, tournaments, and training camps; mentored athletes in skill development, teamwork, and sportsmanship.</p>
+        <div class="chip-row"><span class="chip">Athletics</span><span class="chip">Leadership</span></div>
       </div>
-      <div class="timeline-item">
-        <p class="when">May 2023 – August 2025</p>
+      <div class="card" data-categories="athletics leadership">
+        <span class="when">Aug 2023 – May 2025</span>
+        <h3>Team Leadership Committee, Kent State Women's Lacrosse</h3>
+        <p>Selected to represent teammates and strengthen team culture and communication.</p>
+        <div class="chip-row"><span class="chip">Athletics</span><span class="chip">Leadership</span></div>
+      </div>
+      <div class="card" data-categories="leadership business">
+        <span class="when">Aug 2023 – May 2025</span>
+        <h3>Advancement Student-Athlete Ambassador, Kent State</h3>
+        <p>Represented Kent State Athletics at donor and alumni events, developing public speaking and professional communication skills.</p>
+        <div class="chip-row"><span class="chip">Leadership</span><span class="chip">Business</span></div>
+      </div>
+      <div class="card" data-categories="athletics">
+        <span class="when">May 2023 – Aug 2025</span>
         <h3>Trainer, Youth Lacrosse Trainer — Medina, OH</h3>
         <p>Trained 8 individual athletes (ages 8–14) and 3 groups of middle schoolers, developing age-specific practice plans and skill-development drills.</p>
+        <div class="chip-row"><span class="chip">Athletics</span></div>
       </div>
     </div>
-  </section>
-
-  <section id="projects" class="reveal">
-    <h2>
-      <span class="section-icon" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="20" x2="5" y2="12"></line>
-          <line x1="12" y1="20" x2="12" y2="4"></line>
-          <line x1="19" y1="20" x2="19" y2="15"></line>
-        </svg>
-      </span>
-      Projects
-    </h2>
-    <div class="cards">
-      <div class="card">
-        <h3>Gem of the Highlands: 5K Marketing Strategy &amp; Promotion</h3>
-        <p>Project Management, Xavier University · Aug–Dec 2025. Led a project team through planning, task delegation, and timeline management to reach 500 race sign-ups, running digital and in-person marketing campaigns and coordinating stakeholder communication.</p>
-      </div>
-      <div class="card">
-        <h3>Management Model</h3>
-        <p>Business Analytics &amp; Information Systems, Xavier University · Jan–May 2026. Optimized a business management model in Excel using scenario and sensitivity analysis to maximize profit and support data-driven strategic recommendations.</p>
-      </div>
-    </div>
+    <p id="experience-empty" class="section-intro" hidden>No entries in this category yet.</p>
   </section>
 
   <section id="courses" class="reveal">
@@ -605,8 +751,12 @@
       Courses
     </h2>
 
-    <h3>Current Courses</h3>
-    <div class="cards">
+    <div class="filter-bar" role="group" aria-label="Choose course view">
+      <button type="button" class="filter-btn active" data-course-view="current" aria-pressed="true">Current Courses</button>
+      <button type="button" class="filter-btn" data-course-view="future" aria-pressed="false">Future MBA Courses</button>
+    </div>
+
+    <div class="cards" id="current-courses-view">
       <div class="card">
         <h3>International Management</h3>
       </div>
@@ -624,8 +774,11 @@
       </div>
     </div>
 
-    <h3 style="margin-top: 32px;">Future MBA Courses</h3>
-    <p style="color: var(--text-muted);">Beginning Spring 2027, as a graduate student in a 5th year at Xavier completing the MBA while continuing Division I athletics.</p>
+    <div class="cards" id="future-courses-view" hidden>
+      <div class="card">
+        <p style="margin: 0; color: var(--text-muted);">Beginning Spring 2027, as a graduate student in a 5th year at Xavier completing the MBA while continuing Division I athletics.</p>
+      </div>
+    </div>
   </section>
 
   <section id="awards" class="reveal">
@@ -656,24 +809,32 @@
       </span>
       Student-Athlete
     </h2>
-    <p>
-      I've played lacrosse for as long as I can remember. From 2023 to 2025 I
-      competed as a member of the Women's Lacrosse team at Kent State
-      University, and that's the reason I came to Xavier University to
-      continue competing at the Division I level in the Big East Conference.
-      Today I serve as team captain, leading both on and off the field, and
-      balance 20+ hours of Division I athletics commitments weekly with a
-      full-time academic course load. Between practices, lifts, travel, and
-      games, lacrosse has demanded a level of discipline and time management
-      that's carried over into everything else I do.
-    </p>
-    <p>
-      This past season, I suffered a season-ending injury — I tore my ACL
-      and was out for the entire season. Rehabbing while still supporting my
-      team as captain from the sideline was one of the hardest challenges
-      I've faced, and it's taught me resilience I couldn't have learned any
-      other way.
-    </p>
+    <div class="athlete-layout">
+      <figure class="feature-photo">
+        <img src="images/mia-headshot.webp" alt="Mia DiPerna in her Xavier Women's Lacrosse jersey, Big East Conference" width="400" height="500" loading="lazy">
+        <figcaption>Photo: Xavier Athletics</figcaption>
+      </figure>
+      <div>
+        <p>
+          I've played lacrosse for as long as I can remember. From 2023 to 2025 I
+          competed as a member of the Women's Lacrosse team at Kent State
+          University, and that's the reason I came to Xavier University to
+          continue competing at the Division I level in the Big East Conference.
+          Today I serve as team captain, leading both on and off the field, and
+          balance 20+ hours of Division I athletics commitments weekly with a
+          full-time academic course load. Between practices, lifts, travel, and
+          games, lacrosse has demanded a level of discipline and time management
+          that's carried over into everything else I do.
+        </p>
+        <p>
+          This past season, I suffered a season-ending injury — I tore my ACL
+          and was out for the entire season. Rehabbing while still supporting my
+          team as captain from the sideline was one of the hardest challenges
+          I've faced, and it's taught me resilience I couldn't have learned any
+          other way.
+        </p>
+      </div>
+    </div>
     <p>
       More than the competition itself, I love what the sport has given me:
       a team to grow alongside, a reason to push past what I thought I was
@@ -691,22 +852,6 @@
       <div class="card">
         <h3>Resilience</h3>
         <p>Competing at the highest level means learning to bounce back from setbacks.</p>
-      </div>
-    </div>
-
-    <h3 style="margin-top: 32px;">Leadership Roles</h3>
-    <div class="cards">
-      <div class="card">
-        <h3>Team Captain, Xavier Women's Lacrosse</h3>
-        <p>August 2025 – Present. Collaborate with coaches and teammates to achieve team goals.</p>
-      </div>
-      <div class="card">
-        <h3>Team Leadership Committee, Kent State Women's Lacrosse</h3>
-        <p>August 2023 – May 2025. Selected to represent teammates and strengthen team culture and communication.</p>
-      </div>
-      <div class="card">
-        <h3>Advancement Student-Athlete Ambassador, Kent State</h3>
-        <p>August 2023 – May 2025. Represented Kent State Athletics at donor and alumni events, developing public speaking and professional communication skills.</p>
       </div>
     </div>
   </section>
@@ -793,6 +938,46 @@
   });
   toTop.addEventListener("click", function () {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var filterButtons = document.querySelectorAll("#experience .filter-btn");
+  var galleryCards = document.querySelectorAll("#experience-gallery .card");
+  var emptyMsg = document.getElementById("experience-empty");
+  filterButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      filterButtons.forEach(function (b) {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
+      var filter = btn.dataset.filter;
+      var visibleCount = 0;
+      galleryCards.forEach(function (card) {
+        var cats = card.dataset.categories.split(" ");
+        var show = filter === "all" || cats.indexOf(filter) !== -1;
+        card.style.display = show ? "" : "none";
+        if (show) visibleCount++;
+      });
+      emptyMsg.hidden = visibleCount !== 0;
+    });
+  });
+
+  var courseButtons = document.querySelectorAll("#courses .filter-btn");
+  var currentView = document.getElementById("current-courses-view");
+  var futureView = document.getElementById("future-courses-view");
+  courseButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      courseButtons.forEach(function (b) {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
+      var view = btn.dataset.courseView;
+      currentView.hidden = view !== "current";
+      futureView.hidden = view !== "future";
+    });
   });
 </script>
 
