@@ -110,7 +110,7 @@ function rrect(g, x, y, w, h, r) {
 const LY = 600;
 function s1(g, t) {
   bg(g, C.ink);
-  const p1 = prog(t, .05, .4), p2 = prog(t, .4, .85);
+  const p1 = prog(t, -.12, .4), p2 = prog(t, .4, .85);
   g.fillStyle = C.paper;
   if (t < .4) {
     const r = 18 * E.outBack(p1);
@@ -176,7 +176,7 @@ function s2(g, t) {
   if (idx === 0) {
     // slide + skew + trails
     for (let k = 4; k >= 0; k--) {
-      const e = E.outExpo(prog(wl - k * .025, 0, .38));
+      const e = E.outExpo(prog(wl + .04 - k * .025, 0, .38));
       g.save(); g.translate((1 - e) * -1000, 0);
       g.transform(1, 0, -.35 * (1 - e), 1, 0, 0);
       g.globalAlpha = k === 0 ? 1 : .14;
@@ -185,23 +185,23 @@ function s2(g, t) {
     }
   } else if (idx === 1) {
     // scale slam + shake
-    const e = E.outExpo(prog(wl, 0, .28));
+    const e = E.outExpo(prog(wl + .03, 0, .28));
     const s = 1 + 2.6 * (1 - e);
     const sh = (1 - prog(wl, .12, .32)) * (wl > .12 ? 1 : 0) * 14;
     g.save(); g.translate(540 + (hash(Math.floor(wl * 60)) - .5) * sh, 540 + (hash(Math.floor(wl * 60) + 9) - .5) * sh);
     g.scale(s, s); g.translate(-540, -540);
-    g.globalAlpha = prog(wl, 0, .06);
+    g.globalAlpha = 1;
     letters(g, word, size, 540, by, { color: C.ink, sp: -.01 });
     g.restore();
   } else if (idx === 2) {
     // letter drop with overshoot + spin
     letters(g, word, size, 540, by, { color: C.ink, sp: -.01 }, i => {
-      const k = prog(wl, i * .035, .26 + i * .035);
-      return { dy: -(1 - E.outBack(k)) * 700, rot: (1 - E.outCubic(k)) * (i % 2 ? .6 : -.6), a: k > 0 ? 1 : 0 };
+      const k = prog(wl + .07, i * .03, .24 + i * .03);
+      return { dy: -(1 - E.outBack(k)) * 340, rot: (1 - E.outCubic(k)) * (i % 2 ? .6 : -.6), a: k > 0 ? 1 : 0 };
     });
   } else {
     // split halves sliding in from opposite sides
-    const e = E.outExpo(prog(wl, 0, .34));
+    const e = E.outExpo(prog(wl + .04, 0, .34));
     const mid = by - size * .36;
     g.save(); g.beginPath(); g.rect(0, 0, W, mid); g.clip();
     letters(g, word, size, 540 + (1 - e) * 900, by, { color: C.ink, sp: -.01 }); g.restore();
@@ -223,6 +223,7 @@ function s3(g, t) {
   const lt = t - 4;
   bg(g, C.ink);
   const P = 100;
+  let centerCell = null;
   for (let j = 0; j < 9; j++) for (let i = 0; i < 9; i++) {
     const di = i - 4, dj = j - 4, d = Math.hypot(di, dj);
     const center = d === 0;
@@ -245,12 +246,24 @@ function s3(g, t) {
     } else {
       s *= (1 - c);
     }
-    if (s <= .5) continue;
+    if (s <= 2.5 && !center) continue;
+    if (center) { centerCell = [x, y, s, rot, rad]; continue; }
     g.save(); g.translate(x, y); g.rotate(rot);
     rrect(g, -s / 2, -s / 2, s, s, rad);
     if (!center && (i + j) % 4 === 0 && d > 2.5) { g.strokeStyle = fill; g.lineWidth = 4; g.stroke(); }
     else { g.fillStyle = fill; g.fill(); }
     g.restore();
+  }
+  if (centerCell) {
+    const [x, y, s, rot, rad] = centerCell;
+    for (let k = 0; k < 3; k++) {
+      const q = prog(lt, 1.72 + k * .13, 2.35 + k * .13);
+      if (q <= 0 || q >= 1) continue;
+      const qs = s + E.outExpo(q) * 640;
+      g.save(); g.translate(x, y); g.rotate(rot - k * .12); g.globalAlpha = 1 - q;
+      g.strokeStyle = k === 1 ? C.acid : C.paper; g.lineWidth = 3; g.strokeRect(-qs / 2, -qs / 2, qs, qs); g.restore();
+    }
+    g.save(); g.translate(x, y); g.rotate(rot); rrect(g, -s / 2, -s / 2, s, s, rad); g.fillStyle = C.coral; g.fill(); g.restore();
   }
 }
 
@@ -328,12 +341,12 @@ function s5(g, t) {
   const by = 540 + size * .36;
   const breathe = .02 + .03 * Math.sin(lt * 3);
   const txt = (col) => letters(g, 'FLUID', size, 540, by, { color: col, sp: breathe }, i => {
-    const k = E.outExpo(prog(lt, .15 + i * .05, .65 + i * .05));
+    const k = E.outExpo(prog(lt, -.05 + i * .05, .45 + i * .05));
     return { sy: k, a: k > 0 ? 1 : 0, dy: Math.sin(lt * 4 + i * .9) * 10 };
   });
   txt(C.ink);
   const bx = 540 + 70 * Math.sin(lt * 1.3), byy = 540 + 50 * Math.cos(lt * 1.7);
-  const R = 300 * E.outElastic(prog(lt, 0, 1.0)) + 1300 * E.inExpo(prog(lt, 2.05, 2.5));
+  const R = 300 * E.outElastic(prog(lt, -.2, .9)) + 1300 * E.inExpo(prog(lt, 2.05, 2.5));
   if (R > 1) {
     blobPath(g, bx, byy, R, lt, 1); g.fillStyle = C.coral; g.fill();
     g.save(); blobPath(g, bx, byy, R, lt, 1); g.clip(); txt(C.paper); g.restore();
@@ -365,10 +378,12 @@ function s6(g, t) {
     letters(g, 'x5', 200, 540, 540 + 72, { color: C.paper });
   } else if (cut === 2) {
     bg(g, C.paper);
-    const s = 720 * E.outExpo(prog(cl, 0, .16));
-    g.save(); g.translate(540, 540); g.rotate(-.08 + cl * .4); g.fillStyle = C.blue; g.fillRect(-s / 2, -s / 2, s, s); g.restore();
+    const s = lerp(600, 720, E.outExpo(prog(cl, 0, .2)));
+    const sq = () => { g.beginPath(); g.save(); g.translate(540, 540); g.rotate(-.08 + cl * .4); g.rect(-s / 2, -s / 2, s, s); g.restore(); };
+    sq(); g.fillStyle = C.blue; g.fill();
     const sz = fitSize(g, '60', 640, 640);
-    letters(g, '60', sz, 540, 540 + sz * .36, { color: C.paper, sp: -.02 });
+    letters(g, '60', sz, 540, 540 + sz * .36, { color: C.ink, sp: -.02 });
+    g.save(); sq(); g.clip(); letters(g, '60', sz, 540, 540 + sz * .36, { color: C.paper, sp: -.02 }); g.restore();
   } else if (cut === 3) {
     bg(g, C.blue); g.fillStyle = C.paper;
     for (let j = 0; j < 6; j++) for (let i = 0; i < 6; i++) {
@@ -488,19 +503,21 @@ function hud(g, t, si) {
   const a = E.outCubic(prog(t, .15, .6));
   if (a <= 0) return;
   g.save();
-  g.globalCompositeOperation = 'difference';
+  let lightBg = si === 1 || si === 4;
+  if (si === 5) lightBg = [0, 2, 4].includes(clamp(Math.floor((t - 11.5) / .25), 0, 5));
+  const hc = lightBg ? C.ink : C.paper;
   g.globalAlpha = a * .9;
-  g.strokeStyle = '#fff'; g.lineWidth = 3;
+  g.strokeStyle = hc; g.lineWidth = 3;
   const m = 36, L = 28;
   for (const [x, y, sx, sy] of [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]]) {
     g.beginPath(); g.moveTo(x, y + sy * L); g.lineTo(x, y); g.lineTo(x + sx * L, y); g.stroke();
   }
   const fr = Math.round(t * FPS);
-  mono(g, 'REEL_26', 58, 76, 20, '#fff', 'left', 2);
-  mono(g, `${pad2(si + 1)} / 07`, W - 58, 76, 20, '#fff', 'right', 2);
-  mono(g, `TC 00:00:${pad2(Math.floor(fr / FPS))}:${pad2(fr % FPS)}`, 58, H - 56, 20, '#fff', 'left', 1);
-  mono(g, SCENES[si].name, 540, H - 56, 18, '#fff', 'center', 4);
-  g.fillStyle = '#fff'; g.globalAlpha = a * .35; g.fillRect(W - 258, H - 64, 200, 4);
+  mono(g, 'REEL_26', 58, 76, 20, hc, 'left', 2);
+  mono(g, `${pad2(si + 1)} / 07`, W - 58, 76, 20, hc, 'right', 2);
+  mono(g, `TC 00:00:${pad2(Math.floor(fr / FPS))}:${pad2(fr % FPS)}`, 58, H - 56, 20, hc, 'left', 1);
+  mono(g, SCENES[si].name, 540, H - 56, 18, hc, 'center', 4);
+  g.fillStyle = hc; g.globalAlpha = a * .35; g.fillRect(W - 258, H - 64, 200, 4);
   g.globalAlpha = a * .9; g.fillRect(W - 258, H - 64, 200 * clamp(t / DUR), 4);
   g.restore();
 }
