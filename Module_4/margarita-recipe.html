@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margarita Recipe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Bricolage+Grotesque:wght@600;700;800&display=swap">
+<style>
+html, body { height:100%; margin:0; background:#111418; color:#E9EDF3; font:14px/1.4 Inter, system-ui, sans-serif }
+body { display:flex; flex-direction:column }
+#wrap { position:relative; flex:1; min-height:0; overflow:hidden }
+#stage { position:absolute; left:0; top:0; width:1920px; height:1080px; transform-origin:0 0; overflow:hidden; background:#0E3B3C;
+  --display:"Bricolage Grotesque", "Space Grotesk", system-ui, sans-serif; --sans:"Inter", system-ui, sans-serif }
+#controls { display:flex; align-items:center; gap:12px; padding:10px 16px; background:#1A1F26 }
+#controls button { font:600 14px Inter, system-ui, sans-serif; color:#E9EDF3; background:#2B323C; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; min-width:84px }
+#controls button:hover { background:#38414D } #controls button:focus-visible { outline:2px solid #8FB4FF; outline-offset:2px }
+#scrub { flex:1; min-width:0 } #time { font-variant-numeric:tabular-nums; min-width:92px; text-align:right }
+#stage { --ground:#0E3B3C; --main:#9BCB3C; --second:#F5F1E3; --accent:#E8B23A; color:var(--second); font-family:var(--sans, system-ui, sans-serif) }
+.ground { position:absolute; inset:0; background:var(--ground) }
+.words { position:absolute; margin:0; display:flex; flex-direction:column; gap:20px } .words > * { margin:0 }
+.line { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:150px; line-height:1; font-weight:800; letter-spacing:-0.02em } .sub { font-size:42px; line-height:1.2 }
+#stage { --wall:color-mix(in srgb, var(--ground) 86%, var(--second)); --shelf:color-mix(in srgb, var(--ground) 72%, var(--accent)); --glow:color-mix(in srgb, var(--accent) 50%, var(--second)); --counter:color-mix(in srgb, var(--accent) 40%, var(--ground)); --counter-top:color-mix(in srgb, var(--accent) 62%, var(--second));
+  --glass:color-mix(in srgb, var(--second) 13%, transparent); --glass-line:color-mix(in srgb, var(--second) 72%, transparent); --glass-base:color-mix(in srgb, var(--second) 30%, transparent); --ice:color-mix(in srgb, var(--second) 42%, transparent);
+  --tequila:color-mix(in srgb, var(--accent) 45%, var(--second)); --juice:color-mix(in srgb, var(--main) 72%, var(--second)); --marg:color-mix(in srgb, var(--main) 50%, var(--tequila)); --rind:var(--main); --pith:color-mix(in srgb, var(--second) 86%, var(--main)); --flesh:color-mix(in srgb, var(--main) 58%, var(--second)); --line:color-mix(in srgb, var(--second) 40%, transparent) }
+.art { position:absolute; inset:0; width:100%; height:100%; overflow:visible }
+.edge { position:absolute; inset:0; background:radial-gradient(90% 80% at 38% 50%, transparent 55%, rgba(0,0,0,.28)) }
+.card { right:100px; top:140px; width:640px; padding:40px 44px; gap:10px; background:color-mix(in srgb, var(--second) 8%, var(--ground)); border:2px solid color-mix(in srgb, var(--second) 16%, transparent); border-radius:20px; box-shadow:0 30px 60px rgba(0,0,0,.25) }
+.card-head { font-family:var(--display, var(--sans, system-ui, sans-serif)); font-size:30px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); padding-bottom:12px }
+.card-row { position:relative; display:flex; align-items:center; gap:22px; padding:12px 16px; font-size:38px; line-height:1.2 }
+.card-band { position:absolute; inset:0; border-radius:12px; background:color-mix(in srgb, var(--main) 18%, transparent); opacity:0 }
+.card-tick { position:relative; width:40px; height:40px; flex:none } .card-ok { transform-box:fill-box; transform-origin:center }
+.card-amt { position:relative; width:110px; flex:none; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums } .card-ing { position:relative; flex:1; min-width:0 }
+.callout { left:90px; top:300px; width:430px } .callout .sub { color:color-mix(in srgb, var(--second) 88%, var(--main)) }
+.eyebrow { font-size:30px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--main) }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage"></div></div>
+<div id="controls"><button id="play" type="button">Play</button><button id="restart" type="button">Restart</button><input id="scrub" type="range" min="0" value="0" aria-label="Timeline"><span id="time">0:00</span><button id="mute" type="button" aria-pressed="true">Sound on</button></div>
+<script>// Local animation player: runs scene modules (init/render as pure functions of t) and a synthesized score.
+(function () {
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const ease = {
+    clamp01, clamp: (x, a, b) => Math.max(a, Math.min(b, x)),
+    seg: (t, a, b) => clamp01((t - a) / (b - a)),
+    lerp: (a, b, p) => a + (b - a) * p,
+    eo: (x) => 1 - Math.pow(1 - clamp01(x), 3),
+    ei: (x) => Math.pow(clamp01(x), 3),
+    eio: (x) => { x = clamp01(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; },
+    eob: (x, s = 1.4) => { x = clamp01(x); const c3 = s + 1; return 1 + c3 * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); },
+    rng: (seed) => { let a = (seed * 2654435761) >>> 0 || 1; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; },
+  };
+  const TextFx = {
+    split(el) {
+      if (el._words) return el._words;
+      const words = el.textContent.split(' ');
+      el.textContent = '';
+      el._words = words.map((w, i) => {
+        const s = document.createElement('span');
+        s.textContent = w; s.style.display = 'inline-block';
+        el.appendChild(s);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+        return s;
+      });
+      return el._words;
+    },
+    fadeFromRight(el, t, t0, o = {}) {
+      const st = o.stagger ?? 0.11, d = o.dur ?? 0.5, dx = o.dx ?? 30;
+      TextFx.split(el).forEach((s, i) => {
+        const p = ease.eo(ease.seg(t, t0 + i * st, t0 + i * st + d));
+        s.style.opacity = p.toFixed(3);
+        s.style.transform = 'translateX(' + ((1 - p) * dx).toFixed(1) + 'px)';
+      });
+    },
+    fadeOutLeft(el, t, t0, o = {}) {
+      const d = o.dur ?? 0.4, dx = o.dx ?? 30;
+      TextFx.split(el).forEach((s) => { const p = ease.ei(ease.seg(t, t0, t0 + d)); s.style.opacity = (1 - p).toFixed(3); s.style.transform = 'translateX(' + (-p * dx).toFixed(1) + 'px)'; });
+    },
+  };
+
+  const stageEl = document.getElementById('stage');
+  const scenes = [], byId = {};
+  let scoreFn = null;
+
+  function makeKit(id) {
+    const kit = Object.assign({}, ease, { TextFx, W: 1920, H: 1080 });
+    if (id) {
+      const layer = document.createElement('div');
+      layer.className = 'scene-layer';
+      layer.style.cssText = 'position:absolute;inset:0;overflow:hidden;display:none';
+      stageEl.appendChild(layer);
+      kit.stage = layer;
+    }
+    kit.h = (html) => {
+      const tpl = document.createElement('template');
+      tpl.innerHTML = html.trim();
+      const kids = [...tpl.content.children];
+      if (kids.length === 1) return kids[0];
+      const box = document.createElement('div'); box.style.display = 'contents';
+      kids.forEach((k) => box.appendChild(k)); return box;
+    };
+    kit.css = (text) => { const s = document.createElement('style'); s.textContent = text; document.head.appendChild(s); return s; };
+    kit.scene = (sid, def) => { const s = byId[sid]; if (s) s.def = def; };
+    kit.score = (fn) => { scoreFn = fn; };
+    kit.scenes = () => null;
+    return kit;
+  }
+
+  const Player = {
+    setup(film) {
+      let at = 0;
+      film.scenes.forEach((s) => { const sc = { id: s.id, dur: s.dur, start: at, def: null, kit: makeKit(s.id) }; sc.kit.dur = s.dur; sc.kit.start = at; at += s.dur; scenes.push(sc); byId[s.id] = sc; });
+      Player.END = at;
+    },
+    shared(fn) { fn(makeKit(null)); },
+    scene(id, fn) { fn(byId[id].kit); },
+    score(fn) { fn(makeKit(null)); },
+    async boot() {
+      for (const s of scenes) {
+        try { if (s.def && s.def.init) await s.def.init.call(s.def, s.kit); }
+        catch (e) { console.error('init failed: ' + s.id, e); s.def = null; }
+      }
+      Audio.build();
+      UI.init();
+      const qt = parseFloat(new URLSearchParams(location.search).get('t')); Player.show(isNaN(qt) ? 0 : qt); if (!isNaN(qt)) UI.t = qt;
+    },
+    current: null,
+    show(t) {
+      t = Math.max(0, Math.min(Player.END - 1e-4, t));
+      const s = scenes.find((x) => t >= x.start && t < x.start + x.dur) || scenes[scenes.length - 1];
+      if (Player.current !== s) { if (Player.current) Player.current.kit.stage.style.display = 'none'; s.kit.stage.style.display = 'block'; Player.current = s; }
+      if (s.def) { try { s.def.render.call(s.def, t - s.start, s.kit); } catch (e) { console.error('render failed: ' + s.id, e); } }
+      UI.update(t);
+    },
+  };
+
+  // ---------- Score: a recorder for S, then a small Web Audio synth ----------
+  const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const midi = (p) => { if (typeof p === 'number') return p; const m = /^([A-G])([#b]?)(-?\d)$/.exec(p); if (!m) return 60; return 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); };
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+  const Audio = {
+    events: [], programs: {}, master: { gain: 0, fadeOut: 0 }, ctx: null, live: [], muted: false,
+    build() {
+      if (!scoreFn) return;
+      const T = { END: Player.END }; scenes.forEach((s) => { T[s.id] = s.start; });
+      let B = 0.5, t0 = 0; const ev = this.events, progs = this.programs, self = this;
+      const when = (o) => o.t != null ? [o.t, o.dur ?? 0.5] : [t0 + (o.beat || 0) * B, (o.beats ?? 1) * B];
+      const S = {
+        tempo(bpm, o = {}) { B = 60 / bpm; t0 = o.t0 || 0; },
+        beat(n) { return t0 + n * B; },
+        program(track, patch, o = {}) { progs[track] = Object.assign({ patch }, o); },
+        note(track, p, o = {}) { const [t, d] = when(o); ev.push({ k: 'note', track, m: midi(p), t, d, v: o.vel ?? 64 }); },
+        chord(track, ps, o = {}) { ps.forEach((p) => S.note(track, p, o)); },
+        pattern(track, str, o = {}) {
+          const rep = o.repeat ?? 1, pitches = o.pitch || ['C4']; let n = 0;
+          for (let r = 0; r < rep; r++) for (let i = 0; i < str.length; i++) {
+            const c = str[i]; if (c === '.' || c === ' ') continue;
+            const v = (o.vel ?? 64) * (c === 'X' ? 1.25 : c === 'o' ? 0.5 : 1);
+            if (v > 0) S.note(track, pitches[n % pitches.length], { beat: (o.from || 0) + (r * str.length + i) * 0.5, beats: 0.5, vel: v });
+            n++;
+          }
+        },
+        drum(name, o = {}) { const [t] = when(o); ev.push({ k: 'drum', name, t, v: o.vel ?? 80 }); },
+        drums(map, o = {}) { const rep = o.repeat ?? 1; for (const name in map) { const str = map[name]; for (let r = 0; r < rep; r++) for (let i = 0; i < str.length; i++) { const c = str[i]; if (c === '.' || c === ' ') continue; S.drum(name, { beat: (o.from || 0) + (r * str.length + i) * 0.5, vel: c === 'X' ? 100 : c === 'o' ? 40 : 75 }); } } },
+        fx(name, t, o = {}) { ev.push({ k: 'fx', name, t, v: o.vel ?? 70, pitch: o.pitch ?? 1, d: o.dur ?? 0.5, into: o.into }); },
+        ticks(times, o = {}) { times.forEach((t) => ev.push({ k: 'fx', name: 'tick', t, v: o.vel ?? 50, pitch: 1 })); },
+        run(track, ps, o = {}) { ps.forEach((p, i) => S.note(track, p, { t: o.t + i * (o.step || 0.1), dur: o.step || 0.1, vel: (o.vel ?? 60) + (o.cresc || 0) * i })); },
+        master(o) { Object.assign(self.master, o); },
+      };
+      try { scoreFn(S, T); } catch (e) { console.error('score failed', e); }
+      this.events = ev.filter((e) => e.t > -0.1).sort((a, b) => a.t - b.t);
+    },
+    ensure() {
+      if (!this.ctx) {
+        const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+        this.ctx = new C();
+        this.out = this.ctx.createGain(); this.out.connect(this.ctx.destination);
+        const len = this.ctx.sampleRate; this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+        const d = this.noise.getChannelData(0); const r = ease.rng(3); for (let i = 0; i < len; i++) d[i] = r() * 2 - 1;
+      }
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    },
+    stop() { this.live.forEach((n) => { try { n.stop(); } catch (e) {} }); this.live = []; },
+    start(from) {
+      this.stop();
+      const ctx = this.ensure(); if (!ctx) return;
+      const now = ctx.currentTime + 0.05, mg = Math.pow(10, (this.master.gain || 0) / 20);
+      this.out.gain.cancelScheduledValues(0);
+      this.out.gain.setValueAtTime(this.muted ? 0 : mg, now);
+      const fo = this.master.fadeOut || 0;
+      if (fo && !this.muted) { const fs = now + Math.max(0, Player.END - fo - from); this.out.gain.setValueAtTime(mg, fs); this.out.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.01, Player.END - from)); }
+      for (const e of this.events) { if (e.t < from - 0.02) continue; const at = now + (e.t - from); try { this.play(e, at); } catch (err) {} }
+    },
+    env(g, at, peak, a, d) { g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(peak, at + a); g.gain.exponentialRampToValueAtTime(0.0001, at + a + d); },
+    osc(type, f, at, end, dest) { const o = this.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, at); o.connect(dest); o.start(at); o.stop(end); this.live.push(o); return o; },
+    noiseSrc(at, end, dest) { const s = this.ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; s.connect(dest); s.start(at); s.stop(end); this.live.push(s); return s; },
+    filt(type, f, q, dest) { const b = this.ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q || 0.7; b.connect(dest); return b; },
+    gain(dest) { const g = this.ctx.createGain(); g.connect(dest); return g; },
+    play(e, at) {
+      const ctx = this.ctx, v = Math.min(1.3, e.v / 100);
+      if (e.k === 'note') {
+        const pr = this.programs[e.track] || { patch: 'keys' }, f = hz(e.m), pg = Math.pow(10, (pr.gain || 0) / 20) * v;
+        const g = this.gain(this.out);
+        switch (pr.patch) {
+          case 'pad': { const lp = this.filt('lowpass', 1400, 0.5, g); g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(0.06 * pg, at + 0.4); g.gain.setValueAtTime(0.06 * pg, at + e.d); g.gain.linearRampToValueAtTime(0.0001, at + e.d + 0.8); this.osc('sawtooth', f, at, at + e.d + 0.9, lp).detune.value = -7; this.osc('sawtooth', f, at, at + e.d + 0.9, lp).detune.value = 7; break; }
+          case 'bass': { this.env(g, at, 0.32 * pg, 0.01, Math.min(1.2, e.d + 0.3)); const lp = this.filt('lowpass', 600, 1, g); this.osc('triangle', f, at, at + e.d + 0.5, lp); this.osc('sine', f, at, at + e.d + 0.5, g); break; }
+          case 'marimba': case 'vibes': { this.env(g, at, 0.22 * pg, 0.004, pr.patch === 'vibes' ? 1.2 : 0.45); this.osc('sine', f, at, at + 1.3, g); const g2 = this.gain(g); g2.gain.value = 0.25; this.osc('sine', f * 4, at, at + 0.15, g2); break; }
+          case 'glock': { this.env(g, at, 0.12 * pg, 0.002, 1.4); this.osc('sine', f, at, at + 1.5, g); const g2 = this.gain(g); g2.gain.value = 0.3; this.osc('sine', f * 2.76, at, at + 0.5, g2); break; }
+          case 'pluck': { this.env(g, at, 0.14 * pg, 0.003, 0.35); const lp = this.filt('lowpass', 2400, 1, g); this.osc('triangle', f, at, at + 0.5, lp); break; }
+          case 'ep': case 'keys': default: { const dd = Math.min(1.6, e.d + 0.4); this.env(g, at, 0.12 * pg, 0.006, dd); this.osc('sine', f, at, at + dd + 0.1, g); const g2 = this.gain(g); g2.gain.value = 0.35; this.osc('triangle', f * 2, at, at + dd * 0.5, g2); }
+        }
+        return;
+      }
+      if (e.k === 'drum') {
+        const g = this.gain(this.out);
+        switch (e.name) {
+          case 'kick': { this.env(g, at, 0.7 * v, 0.002, 0.3); const o = this.osc('sine', 140, at, at + 0.35, g); o.frequency.exponentialRampToValueAtTime(45, at + 0.2); break; }
+          case 'snare': case 'clap': { this.env(g, at, 0.3 * v, 0.002, e.name === 'clap' ? 0.18 : 0.2); this.noiseSrc(at, at + 0.25, this.filt('bandpass', 1500, 0.8, g)); break; }
+          case 'sidestick': case 'woodblock': { this.env(g, at, 0.25 * v, 0.001, 0.05); this.noiseSrc(at, at + 0.08, this.filt('bandpass', 2200, 4, g)); break; }
+          case 'hat': case 'shaker': case 'tamb': { this.env(g, at, (e.name === 'shaker' ? 0.09 : 0.12) * v, 0.003, 0.06); this.noiseSrc(at, at + 0.1, this.filt('highpass', 7000, 0.7, g)); break; }
+          case 'openhat': case 'crash': case 'ride': { this.env(g, at, 0.12 * v, 0.003, 1.4); this.noiseSrc(at, at + 1.5, this.filt('highpass', 5000, 0.7, g)); break; }
+          default: { this.env(g, at, 0.2 * v, 0.002, 0.2); this.osc('sine', 200, at, at + 0.25, g); }
+        }
+        return;
+      }
+      // effects
+      const g = this.gain(this.out), p = e.pitch || 1;
+      switch (e.name) {
+        case 'tick': case 'click': case 'doubleclick': { this.env(g, at, 0.12 * v, 0.001, 0.025); this.noiseSrc(at, at + 0.04, this.filt('bandpass', 3200 * p, 3, g)); break; }
+        case 'pop': { this.env(g, at, 0.25 * v, 0.002, 0.09); const o = this.osc('sine', 500 * p, at, at + 0.12, g); o.frequency.exponentialRampToValueAtTime(1100 * p, at + 0.06); break; }
+        case 'ding': { this.env(g, at, 0.2 * v, 0.002, 1.1); this.osc('sine', 1318.5 * p, at, at + 1.2, g); const g2 = this.gain(g); g2.gain.value = 0.3; this.osc('sine', 2637 * p, at, at + 0.6, g2); break; }
+        case 'chime': { [1046.5, 1318.5, 1568, 2093].forEach((f, i) => { const gi = this.gain(this.out); this.env(gi, at + i * 0.06, 0.1 * v, 0.002, 1.8); this.osc('sine', f * p, at + i * 0.06, at + 2, gi); }); break; }
+        case 'sparkle': { const r = ease.rng(Math.floor(at * 100)); for (let i = 0; i < 10; i++) { const ti = at + (e.d || 1) * i / 10, gi = this.gain(this.out); this.env(gi, ti, 0.05 * v, 0.002, 0.25); this.osc('sine', 2000 + r() * 2500, ti, ti + 0.3, gi); } break; }
+        case 'whoosh': case 'revswell': { const d = e.d || 0.5; const bp = this.filt('bandpass', 400, 1.2, g); if (e.into || e.name === 'revswell') { g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(0.25 * v, at + d); g.gain.linearRampToValueAtTime(0.0001, at + d + 0.05); } else { g.gain.setValueAtTime(0.0001, at); g.gain.linearRampToValueAtTime(0.25 * v, at + d * 0.3); g.gain.linearRampToValueAtTime(0.0001, at + d); } bp.frequency.setValueAtTime(300, at); bp.frequency.exponentialRampToValueAtTime(3000, at + d); this.noiseSrc(at, at + d + 0.1, bp); break; }
+        case 'boing': { this.env(g, at, 0.3 * v, 0.005, 0.7); const o = this.osc('sine', 180, at, at + 0.8, g); o.frequency.setValueAtTime(180, at); o.frequency.exponentialRampToValueAtTime(520, at + 0.12); const lg = ctx.createGain(); lg.gain.value = 60; lg.connect(o.frequency); this.osc('sine', 14, at, at + 0.8, lg); break; }
+        case 'thud': { this.env(g, at, 0.5 * v, 0.002, 0.25); const o = this.osc('sine', 120, at, at + 0.3, g); o.frequency.exponentialRampToValueAtTime(45, at + 0.2); break; }
+        case 'roll': { this.env(g, at, 0.1 * v, 0.05, e.d || 1); this.noiseSrc(at, at + (e.d || 1) + 0.1, this.filt('bandpass', 1200, 1, g)); break; }
+        default: { this.env(g, at, 0.1 * v, 0.002, 0.2); this.osc('sine', 880 * p, at, at + 0.25, g); }
+      }
+    },
+  };
+
+  // ---------- Controls and clock ----------
+  const UI = {
+    playing: false, t: 0, base: 0, clock0: 0,
+    init() {
+      this.btn = document.getElementById('play'); this.bar = document.getElementById('scrub'); this.time = document.getElementById('time'); this.mute = document.getElementById('mute');
+      this.bar.max = Player.END; this.bar.step = 0.01;
+      this.btn.addEventListener('click', () => this.toggle());
+      document.getElementById('restart').addEventListener('click', () => { this.seek(0); if (!this.playing) this.toggle(); });
+      this.mute.addEventListener('click', () => { Audio.muted = !Audio.muted; this.mute.textContent = Audio.muted ? 'Sound off' : 'Sound on'; this.mute.setAttribute('aria-pressed', String(!Audio.muted)); if (this.playing) Audio.start(this.t); });
+      this.bar.addEventListener('input', () => this.seek(+this.bar.value));
+      document.addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); this.toggle(); } });
+      window.addEventListener('resize', fit); fit();
+    },
+    now() { return Audio.ctx && Audio.ctx.state === 'running' ? Audio.ctx.currentTime : performance.now() / 1000; },
+    toggle() {
+      if (this.playing) { this.playing = false; Audio.stop(); this.btn.textContent = 'Play'; return; }
+      if (this.t >= Player.END - 0.05) this.t = 0;
+      this.playing = true; this.btn.textContent = 'Pause';
+      Audio.start(this.t);
+      this.base = this.t; this.clock0 = this.now() + (Audio.ctx && Audio.ctx.state === 'running' ? 0.05 : 0);
+      const loop = () => {
+        if (!this.playing) return;
+        this.t = Math.max(this.base, this.base + (this.now() - this.clock0));
+        if (this.t >= Player.END) { this.t = Player.END; Player.show(this.t); this.playing = false; this.btn.textContent = 'Play'; return; }
+        Player.show(this.t); requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    },
+    seek(t) { this.t = t; Player.show(t); if (this.playing) { Audio.start(t); this.base = t; this.clock0 = this.now() + 0.05; } },
+    update(t) { if (!this.bar) return; this.bar.value = t; const f = (x) => Math.floor(x / 60) + ':' + String(Math.floor(x % 60)).padStart(2, '0'); this.time.textContent = f(t) + ' / ' + f(Player.END); },
+  };
+  function fit() {
+    const wrap = document.getElementById('wrap'), w = wrap.clientWidth, h = wrap.clientHeight, s = Math.min(w / 1920, h / 1080);
+    stageEl.style.transform = 'translate(' + ((w - 1920 * s) / 2) + 'px,' + ((h - 1080 * s) / 2) + 'px) scale(' + s + ')';
+  }
+  window.Player = Player;
+})();
+</script>
+<script>Player.setup({"scenes":[{"id":"glass","dur":4},{"id":"rim","dur":4.5},{"id":"ice","dur":4},{"id":"tequila","dur":5},{"id":"citrus","dur":6},{"id":"finish","dur":6.5}]});</script>
+<script>Player.shared(function (kit) {
+// The bar: one tiled wall, one shelf, one pendant light, one counter, one rocks glass. Every scene stages these.
+window.W = {
+  ROWS: [['Rim', 'Lime wedge + coarse salt'], ['Fill', 'Ice'], ['2 oz', 'Blanco tequila'], ['1 oz', 'Fresh lime juice'], ['¾ oz', 'Triple sec'], ['Top', 'Lime wheel']],
+  CUBES: [[622, 802, -8], [812, 806, 7], [718, 784, 3], [650, 690, 14], [792, 688, -11], [722, 598, -4]],
+  // Liquid level 0..1 inside the glass, to a y on the stage; and the glass's inner half-width at a y.
+  levelY(l) { return 862 - 400 * l; },
+  halfW(y) { return 158 + 30 * (878 - y) / 438; },
+
+  room(kit, id) {
+    const r = kit.rng(7); let shelf = '';
+    for (let x = 40; x < 1900; x += 64 + r() * 46) {
+      const h = 120 + r() * 90, w = 34 + r() * 24, c = r() < 0.5 ? 'main' : 'accent', p = Math.round(14 + r() * 16);
+      shelf += '<path d="M' + x.toFixed(0) + ' 470 v-' + (h * 0.62).toFixed(0) + ' q0 -18 ' + (w * 0.3).toFixed(0) + ' -26 v-' + (h * 0.3).toFixed(0) + ' h' + (w * 0.4).toFixed(0) + ' v' + (h * 0.3).toFixed(0) + ' q' + (w * 0.3).toFixed(0) + ' 8 ' + (w * 0.3).toFixed(0) + ' 26 v' + (h * 0.62).toFixed(0) + ' Z" style="fill:color-mix(in srgb, var(--' + c + ') ' + p + '%, var(--wall))"/>';
+    }
+    let grain = '';
+    for (let i = 0; i < 9; i++) { const y = 940 + i * 16 + r() * 8; grain += '<path d="M0 ' + y.toFixed(0) + ' Q480 ' + (y + (r() - 0.5) * 14).toFixed(0) + ' 960 ' + y.toFixed(0) + ' T1920 ' + y.toFixed(0) + '" style="fill:none;stroke:color-mix(in srgb, var(--counter) 70%, var(--ground));stroke-width:3;opacity:.6"/>'; }
+    return '<defs><pattern id="' + id + '-tiles" width="120" height="60" patternUnits="userSpaceOnUse"><rect width="120" height="60" style="fill:var(--ground)"/><rect x="2" y="2" width="116" height="26" rx="5" style="fill:var(--wall)"/><rect x="-58" y="32" width="116" height="26" rx="5" style="fill:var(--wall)"/><rect x="62" y="32" width="116" height="26" rx="5" style="fill:var(--wall)"/></pattern>' +
+      '<radialGradient id="' + id + '-pool" cx="720" cy="600" r="640" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:var(--glow);stop-opacity:.42"/><stop offset=".55" style="stop-color:var(--glow);stop-opacity:.12"/><stop offset="1" style="stop-color:var(--glow);stop-opacity:0"/></radialGradient></defs>' +
+      '<g class="' + id + '-wall"><rect width="1920" height="910" fill="url(#' + id + '-tiles)"/>' + shelf + '<rect y="470" width="1920" height="18" style="fill:var(--shelf)"/><rect y="488" width="1920" height="10" style="fill:rgba(0,0,0,.2)"/></g>' +
+      '<rect class="' + id + '-pool" width="1920" height="1080" fill="url(#' + id + '-pool)"/>' +
+      '<g class="' + id + '-lamp"><path d="M720 -10 V64" style="stroke:var(--shelf);stroke-width:5"/><path d="M664 62 H776 L812 132 H628 Z" style="fill:var(--shelf)"/><path d="M664 62 H700 L668 132 H628 Z" style="fill:color-mix(in srgb, var(--shelf) 70%, var(--second))"/><ellipse cx="720" cy="134" rx="84" ry="10" style="fill:var(--glow)"/></g>' +
+      '<g class="' + id + '-counter"><rect y="900" width="1920" height="22" style="fill:var(--counter-top)"/><rect y="922" width="1920" height="158" style="fill:var(--counter)"/>' + grain + '<rect y="922" width="1920" height="8" style="fill:rgba(0,0,0,.22)"/></g>' +
+      '<ellipse cx="740" cy="906" rx="230" ry="14" style="fill:rgba(0,0,0,.28)"/>';
+  },
+
+  // The rocks glass. Liquid, surface and ice sit inside a clip open at the top, so falling ice shows above the rim.
+  glass(id) {
+    const inner = 'M534 446 L560 864 Q720 886 880 864 L906 446 L906 -400 L534 -400 Z';
+    return '<g class="' + id + '-glass"><defs><clipPath id="' + id + '-in"><path d="' + inner + '"/></clipPath></defs>' +
+      '<path d="M520 440 L548 878 Q720 900 892 878 L920 440 Z" style="fill:var(--glass)"/>' +
+      '<g clip-path="url(#' + id + '-in)"><rect class="' + id + '-liq" x="500" y="900" width="440" height="560" style="fill:var(--tequila)"/>' +
+      '<ellipse class="' + id + '-surf" cx="720" cy="900" rx="170" ry="14" style="fill:var(--second);opacity:.35"/>' +
+      '<g class="' + id + '-ice">' + W.CUBES.map((c) => '<g class="' + id + '-cube" transform="translate(' + c[0] + ' ' + c[1] + ') rotate(' + c[2] + ')"><rect x="-56" y="-56" width="112" height="112" rx="20" style="fill:var(--ice);stroke:var(--glass-line);stroke-width:3"/><path d="M-36 -38 L28 -38" style="stroke:var(--second);stroke-width:7;stroke-linecap:round;opacity:.65"/><path d="M38 -20 L38 30" style="stroke:var(--second);stroke-width:5;stroke-linecap:round;opacity:.35"/></g>').join('') + '</g></g>' +
+      '<path d="M548 878 Q720 900 892 878 L894 902 Q720 924 546 902 Z" style="fill:var(--glass-base)"/>' +
+      '<path d="M548 878 L520 440 M892 878 L920 440" style="fill:none;stroke:var(--glass-line);stroke-width:5;stroke-linecap:round"/>' +
+      '<path d="M558 476 L580 842" style="stroke:var(--second);stroke-width:12;stroke-linecap:round;opacity:.3"/><path d="M888 520 L874 760" style="stroke:var(--second);stroke-width:6;stroke-linecap:round;opacity:.2"/>' +
+      '<ellipse cx="720" cy="440" rx="200" ry="24" style="fill:none;stroke:var(--glass-line);stroke-width:5"/>' +
+      '<ellipse class="' + id + '-wet" cx="720" cy="440" rx="200" ry="24" style="fill:none;stroke:var(--main);stroke-width:9;opacity:0"/>' +
+      '<ellipse class="' + id + '-salt" cx="720" cy="440" rx="200" ry="24" style="fill:none;stroke:var(--second);stroke-width:15;stroke-dasharray:1 8;stroke-linecap:round;opacity:0"/></g>';
+  },
+  // Sets the liquid in a glass built by W.glass: level 0..1, with a gentle slosh.
+  fill(liq, surf, level, t, slosh) {
+    const y = W.levelY(level) + (slosh || 0) * Math.sin(t * 7);
+    liq.setAttribute('y', y.toFixed(1));
+    surf.setAttribute('cy', y.toFixed(1));
+    surf.setAttribute('rx', (W.halfW(y) - 12).toFixed(1));
+    surf.style.opacity = level > 0.01 ? 0.35 : 0;
+  },
+  // Ice resting in the glass (n cubes, 0..6).
+  ice(stage, id, n) {
+    stage.querySelectorAll('.' + id + '-cube').forEach((c, i) => { c.style.opacity = i < n ? 1 : 0; });
+  },
+
+  // A lime wheel centred on (0,0).
+  limeWheel(cls, r) {
+    let seg = '';
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; seg += '<path d="M0 0 L' + ((r - 14) * Math.cos(a)).toFixed(1) + ' ' + ((r - 14) * Math.sin(a)).toFixed(1) + '" style="stroke:var(--pith);stroke-width:4"/>'; }
+    return '<g class="' + cls + '"><circle r="' + r + '" style="fill:var(--rind)"/><circle r="' + (r - 7) + '" style="fill:var(--pith)"/><circle r="' + (r - 13) + '" style="fill:var(--flesh)"/>' + seg + '<circle r="5" style="fill:var(--pith)"/></g>';
+  },
+  // A bottle standing with its mouth at (0,0) and its body below, so a scene tips it by rotating one group.
+  bottle(cls, body, label, band) {
+    return '<g class="' + cls + '"><path d="M-16 0 H16 V110 Q16 140 62 168 Q76 178 76 200 V430 Q76 450 56 450 H-56 Q-76 450 -76 430 V200 Q-76 178 -62 168 Q-16 140 -16 110 Z" style="fill:' + body + ';stroke:var(--glass-line);stroke-width:4"/>' +
+      '<rect x="-20" y="-8" width="40" height="22" rx="5" style="fill:var(--counter-top)"/>' +
+      '<rect x="-76" y="250" width="152" height="124" style="fill:' + label + '"/><rect x="-76" y="292" width="152" height="26" style="fill:' + band + '"/>' +
+      '<path d="M-54 206 V420" style="stroke:var(--second);stroke-width:10;stroke-linecap:round;opacity:.3"/></g>';
+  },
+
+  // The recipe card on the right. Rows before `active` are ticked; the active row lights up and ticks at tickAt.
+  card(kit, id) {
+    const tick = '<svg class="card-tick" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" style="fill:none;stroke:var(--line);stroke-width:3"/><g class="card-ok"><circle cx="20" cy="20" r="19" style="fill:var(--main)"/><path d="M12 20.5l5.5 5.5 10.5-11" style="fill:none;stroke:var(--ground);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round"/></g></svg>';
+    const markup = '<div class="words card ' + id + '-card"><p class="card-head">Margarita · serves 1</p>' +
+      W.ROWS.map((r) => '<div class="card-row"><i class="card-band"></i>' + tick + '<span class="card-amt">' + r[0] + '</span><span class="card-ing">' + r[1] + '</span></div>').join('') + '</div>';
+    let rows = [], box = null;
+    return {
+      markup,
+      bind(root) { box = root.querySelector('.' + id + '-card'); rows = [...box.querySelectorAll('.card-row')].map((el) => ({ el, ok: el.querySelector('.card-ok'), band: el.querySelector('.card-band') })); },
+      render(t, active, tickAt, enterAt) {
+        box.style.transform = 'translateY(' + (-2 * t).toFixed(2) + 'px)';
+        rows.forEach((r, i) => {
+          const k = i < active ? 1 : i === active ? kit.eob(kit.seg(t, tickAt, tickAt + 0.45), 1.7) : 0;
+          r.ok.style.transform = 'scale(' + k.toFixed(3) + ')';
+          r.band.style.opacity = i === active ? kit.eo(kit.seg(t, 0.15, 0.6)) * (1 - 0.6 * kit.seg(t, tickAt + 0.6, tickAt + 1.2)) : 0;
+          let o = i < active ? 0.6 : i === active ? 1 : 0.42, dy = 0;
+          if (enterAt != null) { const e = kit.eo(kit.seg(t, enterAt + i * 0.12, enterAt + i * 0.12 + 0.5)); o *= e; dy = (1 - e) * 26; }
+          r.el.style.opacity = o.toFixed(3);
+          r.el.style.transform = 'translateY(' + dy.toFixed(1) + 'px)';
+        });
+      },
+    };
+  },
+};
+});</script>
+<script>Player.scene("glass", function (kit) {
+const { seg, eo, eio, lerp, TextFx } = kit;
+kit.scene('glass', {
+  init(kit) {
+    this.card = W.card(kit, 'glass');
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art glass-room" viewBox="0 0 1920 1080">' + W.room(kit, 'glass') + '<g class="glass-hold">' + W.glass('glass') + '</g></svg>' +
+      '<div class="edge"></div>' +
+      '<div class="glass-scrim" style="position:absolute;left:0;top:0;width:1150px;height:440px;background:radial-gradient(100% 100% at 0 0, color-mix(in srgb, var(--ground) 92%, transparent) 55%, transparent)"></div>' +
+      '<div class="words glass-title" style="left:90px;top:120px;width:1000px;gap:16px"><p class="eyebrow glass-eye">Recipe</p><h1 class="line glass-line" style="font-size:140px">Margarita</h1><p class="sub glass-sub">Six steps, one glass</p></div>' +
+      this.card.markup + '</div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    Object.assign(this, { room: q('.glass-room'), hold: q('.glass-hold'), liq: q('.glass-liq'), surf: q('.glass-surf'), pool: q('.glass-pool'),
+      eye: q('.glass-eye'), line: q('.glass-line'), sub: q('.glass-sub'), title: q('.glass-title') });
+    W.ice(kit.stage, 'glass', 0);
+  },
+  render(t) {
+    const push = eio(seg(t, 0, 4));
+    this.room.style.transformOrigin = '720px 640px';
+    this.room.style.transform = 'scale(' + lerp(1.0, 1.025, push).toFixed(4) + ')';
+    W.fill(this.liq, this.surf, 0, t, 0);
+    // the glass lands on the counter at the start: a small drop and settle
+    const land = kit.eob(seg(t, -0.6, 0.4), 1.6);
+    this.hold.setAttribute('transform', 'translate(0 ' + lerp(-30, 0, land).toFixed(1) + ')');
+    this.pool.style.opacity = (0.92 + 0.06 * Math.sin(t * 2.1)).toFixed(3);
+    this.eye.style.opacity = eo(seg(t, -0.5, 0));
+    TextFx.fadeFromRight(this.line, t, -0.5);
+    this.sub.style.opacity = eo(seg(t, 0.7, 1.2));
+    this.sub.style.transform = 'translateX(' + lerp(28, 0, eo(seg(t, 0.7, 1.2))).toFixed(1) + 'px)';
+    this.title.style.transform = 'translateX(' + (-2 * t).toFixed(2) + 'px)';
+    this.card.render(t, -1, 99, 1.0);
+  },
+});
+});</script>
+<script>Player.scene("rim", function (kit) {
+const { seg, eo, ei, eio, eob, lerp, TextFx } = kit;
+Object.assign(W, {
+  // A lime wedge, flesh up, centred on its rind's middle.
+  wedge(cls) {
+    return '<g class="' + cls + '"><path d="M-66 0 A66 66 0 0 0 66 0 Z" style="fill:var(--rind)"/><path d="M-58 0 A58 58 0 0 0 58 0 Z" style="fill:var(--pith)"/><path d="M-52 0 A52 52 0 0 0 52 0 Z" style="fill:var(--flesh)"/>' +
+      '<path d="M0 0 L-36 36 M0 0 L0 50 M0 0 L36 36" style="stroke:var(--pith);stroke-width:4"/><path d="M-66 0 H66" style="stroke:var(--juice);stroke-width:6;stroke-linecap:round"/></g>';
+  },
+  // A small salt dish with a mound of coarse salt, pivot at its lip centre.
+  ramekin(cls) {
+    return '<g class="' + cls + '"><path d="M-78 0 H78 L62 64 Q0 80 -62 64 Z" style="fill:var(--pith)"/><path d="M-62 64 Q0 80 62 64 L66 50 Q0 64 -66 50 Z" style="fill:color-mix(in srgb, var(--pith) 75%, var(--ground))"/>' +
+      '<ellipse cx="0" cy="0" rx="78" ry="14" style="fill:color-mix(in srgb, var(--pith) 80%, var(--ground))"/><path d="M-62 2 Q-20 -30 30 -18 Q56 -10 62 2 Z" style="fill:var(--second)"/></g>';
+  },
+});
+kit.scene('rim', {
+  init(kit) {
+    this.card = W.card(kit, 'rim');
+    const r = kit.rng(31);
+    this.grains = Array.from({ length: 34 }, (_, i) => ({ at: 1.95 + i * 0.03 + r() * 0.05, jx: (r() - 0.5) * 50, s: 3 + r() * 3 }));
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art rim-room" viewBox="0 0 1920 1080">' + W.room(kit, 'rim') + W.glass('rim') +
+        '<g class="rim-grains">' + this.grains.map(() => '<circle style="fill:var(--second)"/>').join('') + '</g>' +
+        '<g class="rim-dish" transform="translate(560 250)">' + W.ramekin('rim-ramekin') + '</g>' +
+        '<g class="rim-lime" transform="translate(1100 300)">' + W.wedge('rim-wedge') + '</g></svg>' +
+      '<div class="edge"></div>' +
+      '<div class="words callout rim-call"><h2 class="line rim-line">Rim</h2><p class="sub rim-sub">Lime wedge + coarse salt</p></div>' +
+      this.card.markup + '</div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    W.ice(kit.stage, 'rim', 0);
+    Object.assign(this, { room: q('.rim-room'), liq: q('.rim-liq'), surf: q('.rim-surf'), wet: q('.rim-wet'), salt: q('.rim-salt'),
+      lime: q('.rim-lime'), dish: q('.rim-dish'), ramekin: q('.rim-ramekin'), line: q('.rim-line'), sub: q('.rim-sub'), call: q('.rim-call') });
+    this.wet.setAttribute('pathLength', '100');
+    this.salt.setAttribute('pathLength', '100');
+    [...q('.rim-grains').children].forEach((el, i) => { this.grains[i].el = el; });
+  },
+  render(t) {
+    this.room.style.transformOrigin = '720px 520px';
+    this.room.style.transform = 'scale(' + lerp(1.06, 1.1, eio(seg(t, 0, 4.5))).toFixed(4) + ')';
+    W.fill(this.liq, this.surf, 0, t, 0);
+
+    // 1. The wedge swoops in, then runs along the front of the rim, left to right.
+    const inn = eo(seg(t, 0, 0.6)), run = eio(seg(t, 0.6, 1.8)), out = ei(seg(t, 1.8, 2.3));
+    const a = Math.PI - Math.PI * run;
+    let x = 720 + 200 * Math.cos(a), y = 446 + 24 * Math.sin(a);
+    x = lerp(1100, x, inn); y = lerp(300, y, inn);
+    x = lerp(x, 1180, out); y = lerp(y, 280, out);
+    this.lime.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (lerp(-30, 160, inn) - 20 * Math.cos(a) * inn + 140 * out).toFixed(1) + ')');
+    this.lime.style.opacity = 1 - seg(t, 2.1, 2.3);
+    const wetP = seg(t, 0.6, 1.8);
+    this.wet.style.opacity = (0.85 * Math.min(1, wetP * 4) * (1 - 0.5 * seg(t, 2.6, 3.2))).toFixed(3);
+    this.wet.style.strokeDasharray = (wetP * 50).toFixed(1) + ' 100';
+    this.wet.style.strokeDashoffset = '-' + (50 - wetP * 50 + 0).toFixed(1);
+
+    // 2. The dish rises, tips, and sweeps across; salt falls and sticks to the rim.
+    const up = eob(seg(t, 1.3, 1.9), 1.5), tip = eio(seg(t, 1.8, 2.1)) * (1 - eio(seg(t, 3.1, 3.4)));
+    const dx = lerp(560, 900, eio(seg(t, 1.95, 3.0)));
+    const dishX = (u) => lerp(560, 900, eio(seg(u, 1.95, 3.0)));
+    this.dish.setAttribute('transform', 'translate(' + dx.toFixed(1) + ' ' + lerp(150, 290, up).toFixed(1) + ') rotate(' + (-38 * tip).toFixed(1) + ')');
+    this.dish.style.opacity = eo(seg(t, 1.3, 1.6)) * (1 - seg(t, 3.5, 3.8));
+    for (const g of this.grains) {
+      const q = (t - g.at) / 0.4;
+      if (q < 0 || q > 1) { g.el.style.opacity = 0; continue; }
+      const gx = dishX(g.at) - 60 + g.jx;
+      g.el.setAttribute('cx', gx.toFixed(1));
+      g.el.setAttribute('cy', (296 + 150 * q * q).toFixed(1));
+      g.el.setAttribute('r', g.s.toFixed(1));
+      g.el.style.opacity = 1;
+    }
+    const sp = seg(t, 2.2, 3.3);
+    this.salt.style.opacity = Math.min(1, sp * 3).toFixed(3);
+    this.salt.style.strokeDasharray = '0.4 ' + lerp(6, 1.6, sp).toFixed(2);
+
+    TextFx.fadeFromRight(this.line, t, 0.2);
+    this.sub.style.opacity = eo(seg(t, 0.6, 1.1));
+    this.sub.style.transform = 'translateX(' + lerp(28, 0, eo(seg(t, 0.6, 1.1))).toFixed(1) + 'px)';
+    this.call.style.transform = 'translateX(' + (-2 * t).toFixed(2) + 'px)';
+    this.card.render(t, 0, 3.3);
+  },
+});
+});</script>
+<script>Player.scene("ice", function (kit) {
+const { seg, eo, ei, eio, lerp, TextFx } = kit;
+kit.scene('ice', {
+  init(kit) {
+    this.card = W.card(kit, 'ice');
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art ice-room" viewBox="0 0 1920 1080">' + W.room(kit, 'ice') + W.glass('ice') + '</svg>' +
+      '<div class="edge"></div>' +
+      '<div class="words callout ice-call"><h2 class="line ice-line">Ice</h2><p class="sub ice-sub">Fill the glass to the top</p></div>' +
+      this.card.markup + '</div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    Object.assign(this, { room: q('.ice-room'), liq: q('.ice-liq'), surf: q('.ice-surf'), wet: q('.ice-wet'), salt: q('.ice-salt'),
+      line: q('.ice-line'), sub: q('.ice-sub'), call: q('.ice-call'), cubes: [...kit.stage.querySelectorAll('.ice-cube')] });
+    this.wet.setAttribute('pathLength', '100');
+    this.salt.setAttribute('pathLength', '100');
+    this.wet.style.opacity = 0.42;
+    this.salt.style.opacity = 1;
+    this.salt.style.strokeDasharray = '0.4 1.6';
+  },
+  render(t) {
+    this.room.style.transformOrigin = '720px 560px';
+    this.room.style.transform = 'scale(' + lerp(1.02, 1.05, eio(seg(t, 0, 4))).toFixed(4) + ')';
+    W.fill(this.liq, this.surf, 0, t, 0);
+    this.cubes.forEach((el, i) => {
+      const c = W.CUBES[i], at = 0.35 + i * 0.3, p = seg(t, at, at + 0.42);
+      let y;
+      if (p < 1) y = lerp(-180, c[1], ei(p));
+      else { const s = t - at - 0.42; y = c[1] - 22 * Math.exp(-s * 8) * Math.abs(Math.sin(s * 13)); }
+      const spin = c[2] + 70 * (1 - eo(seg(t, at, at + 0.6))) * (i % 2 ? 1 : -1);
+      el.setAttribute('transform', 'translate(' + c[0] + ' ' + y.toFixed(1) + ') rotate(' + spin.toFixed(1) + ')');
+      el.style.opacity = t < at - 0.05 ? 0 : 1;
+    });
+    TextFx.fadeFromRight(this.line, t, 0.2);
+    this.sub.style.opacity = eo(seg(t, 0.6, 1.1));
+    this.sub.style.transform = 'translateX(' + lerp(28, 0, eo(seg(t, 0.6, 1.1))).toFixed(1) + 'px)';
+    this.call.style.transform = 'translateX(' + (-2 * t).toFixed(2) + 'px)';
+    this.card.render(t, 1, 2.5);
+  },
+});
+});</script>
+<script>Player.scene("tequila", function (kit) {
+const { seg, eo, ei, eio, eob, lerp, TextFx } = kit;
+kit.scene('tequila', {
+  init(kit) {
+    this.card = W.card(kit, 'tequila');
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art tequila-room" viewBox="0 0 1920 1080">' + W.room(kit, 'tequila') + W.glass('tequila') +
+        '<rect class="tequila-stream" x="-8" width="16" rx="8" style="fill:var(--tequila)"/>' +
+        '<g class="tequila-hold">' + W.bottle('tequila-bottle', 'color-mix(in srgb, var(--second) 22%, transparent)', 'var(--pith)', 'var(--accent)') + '</g></svg>' +
+      '<div class="edge"></div>' +
+      '<div class="words callout tequila-call"><h2 class="line tequila-line">2 oz</h2><p class="sub tequila-sub">Blanco tequila</p></div>' +
+      this.card.markup + '</div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    W.ice(kit.stage, 'tequila', 6);
+    Object.assign(this, { room: q('.tequila-room'), liq: q('.tequila-liq'), surf: q('.tequila-surf'), wet: q('.tequila-wet'), salt: q('.tequila-salt'),
+      hold: q('.tequila-hold'), stream: q('.tequila-stream'), line: q('.tequila-line'), sub: q('.tequila-sub'), call: q('.tequila-call') });
+    this.salt.setAttribute('pathLength', '100');
+    this.wet.style.opacity = 0.42;
+    this.salt.style.opacity = 1;
+    this.salt.style.strokeDasharray = '0.4 1.6';
+  },
+  render(t) {
+    this.room.style.transformOrigin = '760px 480px';
+    this.room.style.transform = 'scale(' + lerp(1.0, 1.035, eio(seg(t, 0, 5))).toFixed(4) + ')';
+    // The bottle arrives upright, dips back a touch, tips to pour, then rights itself.
+    const come = eob(seg(t, 0, 0.7), 1.4), back = Math.sin(Math.PI * seg(t, 0.7, 1.0)) * 6;
+    const tip = eio(seg(t, 0.9, 1.4)) * (1 - eio(seg(t, 3.6, 4.1))), leave = ei(seg(t, 4.1, 4.7));
+    const mx = lerp(1060, 790, come) + 260 * leave, my = lerp(150, 330, come) - 120 * leave;
+    this.hold.setAttribute('transform', 'translate(' + mx.toFixed(1) + ' ' + my.toFixed(1) + ') rotate(' + (back - 128 * tip).toFixed(1) + ')');
+    this.hold.style.opacity = 1 - seg(t, 4.4, 4.7);
+    // Pouring from 1.35 to 3.75; the level rises with it.
+    const pour = seg(t, 1.35, 3.75), on = t > 1.3 && t < 3.85;
+    const level = 0.42 * eio(pour);
+    const surfY = W.levelY(level);
+    const top = Math.min(surfY, 860), start = my + 6;
+    const head = t < 1.55 ? lerp(start, top, eo(seg(t, 1.3, 1.55))) : top;
+    const tail = t > 3.6 ? lerp(start, top, ei(seg(t, 3.6, 3.85))) : start;
+    this.stream.setAttribute('transform', 'translate(' + (mx - 4).toFixed(1) + ' 0)');
+    this.stream.setAttribute('y', tail.toFixed(1));
+    this.stream.setAttribute('height', Math.max(0, head - tail).toFixed(1));
+    this.stream.setAttribute('width', (14 + 2 * Math.sin(t * 31)).toFixed(1));
+    this.stream.style.opacity = on ? 0.95 : 0;
+    W.fill(this.liq, this.surf, level, t, on ? 2.5 : (t > 3.8 ? 2.5 * Math.exp(-(t - 3.8) * 2) : 0));
+    this.liq.style.fill = 'var(--tequila)';
+    TextFx.fadeFromRight(this.line, t, 0.3);
+    this.sub.style.opacity = eo(seg(t, 0.7, 1.2));
+    this.sub.style.transform = 'translateX(' + lerp(28, 0, eo(seg(t, 0.7, 1.2))).toFixed(1) + 'px)';
+    this.call.style.transform = 'translateX(' + (-2 * t).toFixed(2) + 'px)';
+    this.card.render(t, 2, 3.8);
+  },
+});
+});</script>
+<script>Player.scene("citrus", function (kit) {
+const { seg, eo, ei, eio, eob, lerp, TextFx } = kit;
+Object.assign(W, {
+  // Half a lime, cut face down, centred on the cut face.
+  limeHalf(cls) {
+    return '<g class="' + cls + '"><path d="M-84 0 A84 74 0 0 1 84 0 Z" style="fill:var(--rind)"/><path d="M-60 -40 Q-30 -66 6 -68" style="fill:none;stroke:var(--second);stroke-width:9;stroke-linecap:round;opacity:.35"/>' +
+      '<ellipse cx="0" cy="0" rx="84" ry="16" style="fill:var(--pith)"/><ellipse cx="0" cy="2" rx="74" ry="12" style="fill:var(--flesh)"/></g>';
+  },
+});
+kit.scene('citrus', {
+  init(kit) {
+    this.card = W.card(kit, 'citrus');
+    const r = kit.rng(53);
+    this.drops = Array.from({ length: 22 }, (_, i) => ({ at: 0.85 + i * 0.075 + r() * 0.04, jx: (r() - 0.5) * 70, s: 6 + r() * 5 }));
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art citrus-room" viewBox="0 0 1920 1080">' + W.room(kit, 'citrus') + W.glass('citrus') +
+        '<g class="citrus-drops">' + this.drops.map(() => '<ellipse style="fill:var(--juice)"/>').join('') + '</g>' +
+        '<rect class="citrus-stream" x="-7" width="14" rx="7" style="fill:color-mix(in srgb, var(--second) 75%, transparent)"/>' +
+        '<g class="citrus-lime" transform="translate(720 260)">' + W.limeHalf('citrus-half') + '</g>' +
+        '<g class="citrus-hold">' + W.bottle('citrus-bottle', 'color-mix(in srgb, var(--accent) 58%, transparent)', 'var(--second)', 'var(--main)') + '</g></svg>' +
+      '<div class="edge"></div>' +
+      '<div class="words callout citrus-a"><h2 class="line citrus-a-line">1 oz</h2><p class="sub citrus-a-sub">Fresh lime juice</p></div>' +
+      '<div class="words callout citrus-b"><h2 class="line citrus-b-line">¾ oz</h2><p class="sub citrus-b-sub">Triple sec</p></div>' +
+      this.card.markup + '</div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    W.ice(kit.stage, 'citrus', 6);
+    Object.assign(this, { room: q('.citrus-room'), liq: q('.citrus-liq'), surf: q('.citrus-surf'), wet: q('.citrus-wet'), salt: q('.citrus-salt'),
+      lime: q('.citrus-lime'), half: q('.citrus-half'), hold: q('.citrus-hold'), stream: q('.citrus-stream'),
+      a: q('.citrus-a'), aLine: q('.citrus-a-line'), aSub: q('.citrus-a-sub'), b: q('.citrus-b'), bLine: q('.citrus-b-line'), bSub: q('.citrus-b-sub') });
+    [...q('.citrus-drops').children].forEach((el, i) => { this.drops[i].el = el; });
+    this.salt.setAttribute('pathLength', '100');
+    this.wet.style.opacity = 0.42;
+    this.salt.style.opacity = 1;
+    this.salt.style.strokeDasharray = '0.4 1.6';
+    this.half.style.transformBox = 'fill-box';
+    this.half.style.transformOrigin = '50% 100%';
+  },
+  render(t) {
+    this.room.style.transformOrigin = '740px 500px';
+    this.room.style.transform = 'scale(' + lerp(1.03, 1.07, eio(seg(t, 0, 6))).toFixed(4) + ')';
+
+    // Lime juice: the half drops in over the glass, squeezes three times, and lifts away.
+    const lin = eob(seg(t, 0, 0.6), 1.5), lout = ei(seg(t, 2.5, 3.0));
+    this.lime.setAttribute('transform', 'translate(' + (720 + 30 * lout).toFixed(1) + ' ' + (lerp(-120, 300, lin) - 420 * lout).toFixed(1) + ')');
+    const sq = seg(t, 0.75, 2.45), squeeze = Math.pow(Math.max(0, Math.sin(sq * Math.PI * 3)), 0.8) * (sq > 0 && sq < 1 ? 1 : 0);
+    this.half.style.transform = 'scale(' + (1 + 0.08 * squeeze).toFixed(3) + ',' + (1 - 0.2 * squeeze).toFixed(3) + ')';
+    const juice = 0.42 + 0.22 * eio(seg(t, 0.9, 2.7));
+
+    // Triple sec: the bottle comes in, tips, pours, and leaves.
+    const come = eob(seg(t, 2.9, 3.5), 1.4), tip = eio(seg(t, 3.5, 3.9)) * (1 - eio(seg(t, 5.1, 5.5))), leave = ei(seg(t, 5.5, 6.0));
+    const mx = lerp(1060, 790, come) + 260 * leave, my = lerp(150, 330, come) - 120 * leave;
+    this.hold.setAttribute('transform', 'translate(' + mx.toFixed(1) + ' ' + my.toFixed(1) + ') rotate(' + (-128 * tip).toFixed(1) + ')');
+    this.hold.style.opacity = eo(seg(t, 2.9, 3.1)) * (1 - seg(t, 5.7, 6.0));
+    const pour = seg(t, 3.85, 5.15), on = t > 3.8 && t < 5.25;
+    const level = juice + 0.16 * eio(pour);
+    const surfY = W.levelY(level), start = my + 6;
+    const head = t < 4.05 ? lerp(start, surfY, eo(seg(t, 3.8, 4.05))) : surfY;
+    const tail = t > 5.0 ? lerp(start, surfY, ei(seg(t, 5.0, 5.25))) : start;
+    this.stream.setAttribute('transform', 'translate(' + (mx - 4).toFixed(1) + ' 0)');
+    this.stream.setAttribute('y', tail.toFixed(1));
+    this.stream.setAttribute('height', Math.max(0, head - tail).toFixed(1));
+    this.stream.style.opacity = on ? 0.9 : 0;
+
+    const pouring = (t > 0.9 && t < 2.7) || on;
+    W.fill(this.liq, this.surf, level, t, pouring ? 2.5 : 0.8);
+    const mix = Math.round(100 * eio(seg(t, 0.9, 5.4)));
+    this.liq.style.fill = 'color-mix(in srgb, var(--marg) ' + mix + '%, var(--tequila))';
+
+    for (const d of this.drops) {
+      const q = (t - d.at) / 0.38;
+      if (q < 0 || q > 1) { d.el.style.opacity = 0; continue; }
+      d.el.setAttribute('cx', (720 + d.jx).toFixed(1));
+      d.el.setAttribute('cy', lerp(318, surfY, q * q).toFixed(1));
+      d.el.setAttribute('rx', d.s.toFixed(1));
+      d.el.setAttribute('ry', (d.s * 1.5).toFixed(1));
+      d.el.style.opacity = 1;
+    }
+
+    // Two callouts in the same place: lime juice, then triple sec.
+    const aOut = seg(t, 2.85, 3.25);
+    TextFx.fadeFromRight(this.aLine, t, 0.2);
+    this.aSub.style.opacity = eo(seg(t, 0.6, 1.1));
+    this.a.style.opacity = 1 - eo(aOut);
+    this.a.style.transform = 'translateX(' + (-2 * t - 40 * ei(aOut)).toFixed(1) + 'px)';
+    TextFx.fadeFromRight(this.bLine, t, 3.25);
+    this.bSub.style.opacity = eo(seg(t, 3.6, 4.1));
+    this.b.style.opacity = t < 3.2 ? 0 : 1;
+    this.b.style.transform = 'translateX(' + (-2 * (t - 3.2)).toFixed(1) + 'px)';
+
+    if (t < 3.0) this.card.render(t, 3, 2.6);
+    else this.card.render(t, 4, 5.2);
+  },
+});
+});</script>
+<script>Player.scene("finish", function (kit) {
+const { seg, eo, ei, eio, eob, lerp, TextFx } = kit;
+Object.assign(W, {
+  // A bar spoon: twisted stem, flat bowl at (0,0), stem rising up.
+  spoon(cls) {
+    let twist = '';
+    for (let y = -40; y > -500; y -= 22) twist += '<path d="M-6 ' + y + ' L6 ' + (y - 11) + '" style="stroke:var(--glass-line);stroke-width:3"/>';
+    return '<g class="' + cls + '"><rect x="-6" y="-520" width="12" height="500" rx="6" style="fill:var(--pith)"/>' + twist +
+      '<ellipse cx="0" cy="0" rx="22" ry="34" style="fill:var(--pith)"/><ellipse cx="-5" cy="-6" rx="8" ry="18" style="fill:var(--second);opacity:.6"/><circle cx="0" cy="-528" r="14" style="fill:var(--pith)"/></g>';
+  },
+});
+kit.scene('finish', {
+  init(kit) {
+    this.card = W.card(kit, 'finish');
+    kit.stage.append(kit.h('<div class="ground">' +
+      '<svg class="art finish-room" viewBox="0 0 1920 1080">' + W.room(kit, 'finish') + W.glass('finish') +
+        '<g class="finish-stir">' + W.spoon('finish-spoon') + '</g>' +
+        '<g class="finish-garnish">' + W.limeWheel('finish-wheel', 74) + '</g></svg>' +
+      '<div class="edge"></div>' +
+      '<div class="words callout finish-call"><h2 class="line finish-line">Stir</h2><p class="sub finish-sub">Then top with a lime wheel</p></div>' +
+      this.card.markup +
+      '<div class="words finish-end" style="left:1150px;top:300px;width:700px;gap:18px"><p class="eyebrow finish-eye">Cheers</p><h1 class="line finish-name" style="font-size:116px">Margarita</h1><p class="sub finish-tag">Salted rim, on the rocks, stirred</p></div></div>'));
+    const q = (s) => kit.stage.querySelector(s);
+    this.card.bind(kit.stage);
+    W.ice(kit.stage, 'finish', 6);
+    Object.assign(this, { room: q('.finish-room'), liq: q('.finish-liq'), surf: q('.finish-surf'), wet: q('.finish-wet'), salt: q('.finish-salt'),
+      stir: q('.finish-stir'), garnish: q('.finish-garnish'), ice: q('.finish-ice'), cardEl: q('.finish-card'),
+      call: q('.finish-call'), line: q('.finish-line'), sub: q('.finish-sub'), end: q('.finish-end'), eye: q('.finish-eye'), name: q('.finish-name'), tag: q('.finish-tag') });
+    this.salt.setAttribute('pathLength', '100');
+    this.wet.style.opacity = 0.42;
+    this.salt.style.opacity = 1;
+    this.salt.style.strokeDasharray = '0.4 1.6';
+    this.liq.style.fill = 'var(--marg)';
+  },
+  render(t) {
+    // Close in for the stir, then ease back for the end card.
+    const back = eio(seg(t, 3.2, 4.4));
+    this.room.style.transformOrigin = '720px 560px';
+    this.room.style.transform = 'translateX(' + lerp(0, -120, back).toFixed(1) + 'px) scale(' + (lerp(1.08, 1.0, back) + 0.006 * t).toFixed(4) + ')';
+
+    // The spoon dips in, circles the glass twice and a half, and lifts out.
+    const dip = eo(seg(t, 0, 0.4)), lift = ei(seg(t, 1.9, 2.3));
+    const ang = 2 * Math.PI * 1.6 * Math.max(0, t - 0.3), rad = 80 * seg(t, 0.2, 0.5) * (1 - seg(t, 1.8, 2.0));
+    const sx = 720 + rad * Math.cos(ang), sy = 770 + 14 * Math.sin(ang) + lerp(-560, 0, dip) - 620 * lift;
+    this.stir.setAttribute('transform', 'translate(' + sx.toFixed(1) + ' ' + sy.toFixed(1) + ') rotate(' + (6 * Math.cos(ang) * (1 - lift)).toFixed(2) + ')');
+    this.stir.style.opacity = 1 - seg(t, 2.1, 2.3);
+    const stirring = t > 0.3 && t < 2.0;
+    W.fill(this.liq, this.surf, 0.82, t, stirring ? 3.5 : 3.5 * Math.exp(-Math.max(0, t - 2.0) * 2.5));
+    this.ice.setAttribute('transform', 'translate(' + (stirring ? 6 * Math.sin(ang) : 0).toFixed(1) + ' 0)');
+
+    // The lime wheel drops onto the rim and settles.
+    const land = eob(seg(t, 2.2, 2.75), 1.8);
+    this.garnish.setAttribute('transform', 'translate(892 ' + lerp(-120, 404, land).toFixed(1) + ') rotate(' + lerp(-200, 14, eo(seg(t, 2.2, 2.75))).toFixed(1) + ')');
+    this.garnish.style.opacity = t < 2.15 ? 0 : 1;
+
+    // Words: the step callout, then the card slides away for the end card.
+    TextFx.fadeFromRight(this.line, t, 0.2);
+    this.sub.style.opacity = eo(seg(t, 0.6, 1.1));
+    const callOut = seg(t, 3.0, 3.4);
+    this.call.style.opacity = 1 - eo(callOut);
+    this.call.style.transform = 'translateX(' + (-2 * t - 40 * ei(callOut)).toFixed(1) + 'px)';
+    this.card.render(t, 5, 2.8);
+    const cOut = ei(seg(t, 3.2, 3.7));
+    this.cardEl.style.transform = 'translate(' + (120 * cOut).toFixed(1) + 'px, ' + (-2 * t).toFixed(1) + 'px)';
+    this.cardEl.style.opacity = 1 - cOut;
+    this.eye.style.opacity = eo(seg(t, 3.6, 4.0));
+    TextFx.fadeFromRight(this.name, t, 3.8);
+    this.tag.style.opacity = eo(seg(t, 4.4, 4.9));
+    this.tag.style.transform = 'translateX(' + lerp(28, 0, eo(seg(t, 4.4, 4.9))).toFixed(1) + 'px)';
+    this.end.style.transform = 'translateX(' + (-2 * Math.max(0, t - 3.6)).toFixed(2) + 'px)';
+  },
+});
+});</script>
+<script>Player.score(function (kit) {
+kit.score(function (S, T) {
+  // Light bossa: marimba, nylon pluck, round bass, shaker and sidestick. Bar 11 lands on the end card's title.
+  const hit = T.finish + 3.8, B = 60 / 98, t0 = hit - 44 * B;
+  S.tempo(98, { t0 });
+  S.program('pad', 'pad', { rev: 0.5, gain: -4 });
+  S.program('bass', 'bass');
+  S.program('mallet', 'marimba', { rev: 0.25 });
+  S.program('pluck', 'pluck', { pan: -0.3, gain: -3 });
+  const chords = [
+    ['A3', 'C4', 'E4', 'G4'], ['F#3', 'C4', 'E4', 'A4'], ['G3', 'B3', 'D4', 'F#4'], ['E3', 'G3', 'B3', 'C4'],
+    ['A3', 'C4', 'E4', 'G4'], ['F#3', 'C4', 'E4', 'A4'], ['G3', 'B3', 'D4', 'F#4'], ['E3', 'G3', 'B3', 'C4'],
+    ['E3', 'G3', 'B3', 'D4'], ['A3', 'C4', 'E4', 'G4'], ['F#3', 'C4', 'E4', 'A4'], ['F#3', 'C4', 'D4', 'A4']];
+  const roots = ['A2', 'D2', 'G2', 'C3', 'A2', 'D2', 'G2', 'C3', 'E2', 'A2', 'D2', 'D2'];
+  const tunes = [
+    ['E5', 'C5', 'A4', 'G4'], ['F#5', 'E5', 'C5', 'A4'], ['D5', 'B4', 'G4', 'F#4'], ['E5', 'G5', 'E5', 'C5'],
+    ['A5', 'G5', 'E5', 'C5'], ['F#5', 'A5', 'F#5', 'E5'], ['D5', 'F#5', 'B4', 'D5'], ['C5', 'E5', 'G5', 'E5'],
+    ['B4', 'D5', 'G5', 'E5'], ['C5', 'E5', 'A5', 'G5'], ['A5', 'F#5', 'E5', 'C5'], ['D5', 'C5', 'A4', 'F#4']];
+  for (let b = 0; b < 12; b++) {
+    const beat = 4 * b, soft = b < 2 ? 0.6 : b >= 9 ? 0.75 : 1;
+    if (S.beat(beat) > -0.05) S.chord('pad', chords[b], { beat, beats: 4, vel: Math.round(44 * soft) });
+    if (b >= 1) { S.note('bass', roots[b], { beat, beats: 1.5, vel: 70 * soft }); S.note('bass', roots[b], { beat: beat + 2.5, beats: 1, vel: 58 * soft }); }
+    if (b >= 2 && b <= 9) S.pattern('mallet', 'x.x.X.x.', { from: beat, repeat: 1, pitch: tunes[b], vel: 60 });
+    if (b >= 1) S.pattern('pluck', '.x.x.x.x', { from: beat, repeat: 1, pitch: [chords[b][1], chords[b][3]], vel: 40 * soft });
+  }
+  S.drums({ shaker: 'xoxoxoxo', sidestick: '..x..x..', kick: 'x...x...' }, { from: 8, repeat: 7 });
+  S.drums({ shaker: 'o.o.o.o.' }, { from: 36, repeat: 2 });
+  // The hit: the end card's title, then a long ring.
+  S.chord('pad', ['G3', 'B3', 'D4', 'F#4', 'A4'], { beat: 44, beats: 6, vel: 70 });
+  S.chord('mallet', ['G4', 'B4', 'D5', 'F#5'], { beat: 44, beats: 4, vel: 84 });
+  S.note('bass', 'G2', { beat: 44, beats: 4, vel: 82 });
+  S.drum('kick', { beat: 44, vel: 90 });
+  S.fx('chime', hit, { vel: 70 });
+
+  // Effects on the exact frames.
+  S.fx('thud', 0, { vel: 40 });
+  S.fx('whoosh', T.rim + 0.05, { dur: 0.5, vel: 40 });
+  S.fx('sparkle', T.rim + 2.0, { dur: 1.2, vel: 45 });
+  for (let i = 0; i < 6; i++) S.fx('click', T.ice + 0.35 + i * 0.3 + 0.42, { vel: 60, pitch: 1.4 + 0.1 * (i % 3) });
+  S.fx('whoosh', T.tequila + 0.05, { dur: 0.45, vel: 35 });
+  S.fx('whoosh', T.citrus + 2.95, { dur: 0.45, vel: 35 });
+  [1.03, 1.6, 2.17].forEach((s) => S.fx('pop', T.citrus + s, { vel: 30, pitch: 0.8 }));
+  const stir = []; for (let s = 0.5; s < 1.95; s += 0.31) stir.push(T.finish + s);
+  S.ticks(stir, { vel: 35 });
+  S.fx('thud', T.finish + 2.62, { vel: 35 });
+  S.fx('whoosh', T.finish + 3.2, { dur: 0.5, vel: 35 });
+  // A pop each time the recipe card ticks a row.
+  [T.rim + 3.3, T.ice + 2.5, T.tequila + 3.8, T.citrus + 2.6, T.citrus + 5.2, T.finish + 2.8].forEach((s) => S.fx('pop', s, { vel: 50 }));
+  S.master({ gain: -6, fadeOut: 1.5 });
+});
+});</script>
+<script>Player.boot();</script>
+</body>
+</html>

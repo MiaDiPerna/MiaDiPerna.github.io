@@ -1,0 +1,8 @@
+# Installed tools (reinstall with npm install in media/ad)
+node_modules/
+# Temporary render files
+video-silent.mp4
+score.wav
+*.tmp
+# Class pages saved from the browser
+mgmt-342-build_session-24*

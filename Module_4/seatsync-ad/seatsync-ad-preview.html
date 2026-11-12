@@ -1,0 +1,512 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>SeatSync Ad</title>
+<style>
+html,body{margin:0;padding:0;background:#fff;overflow:hidden}
+svg{display:block}
+</style></head>
+<body>
+<svg id="stage" xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"></svg>
+<script>
+const W=1920,H=1080;
+const NAVY='#13294B', POLO='#D2433A', POLO_D='#A8322B', SKIN='#EDB98A', SKIN_D='#D99E6E', HAIR='#3B2A20', PANTS='#2F3640', INK='#1B1B1B';
+const FONT="'Segoe UI', Arial, sans-serif", COMIC="Impact, 'Arial Black', sans-serif";
+
+const cl=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const pr=(t,a,b)=>cl((t-a)/(b-a));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const eo=x=>1-Math.pow(1-x,3);
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const back=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---------- shared drawing helpers ---------- */
+function txt(x,y,s,o={}){
+  return `<text x="${x}" y="${y}" font-family="${o.font||FONT}" font-size="${o.size||40}" font-weight="${o.weight||700}" fill="${o.fill||INK}" text-anchor="${o.anchor||'middle'}" ${o.stroke?`stroke="${o.stroke}" stroke-width="${o.sw||8}" paint-order="stroke" stroke-linejoin="round"`:''} ${o.opacity!=null?`opacity="${o.opacity}"`:''} ${o.extra||''}>${esc(s)}</text>`;
+}
+function bubble(x,y,w,h,tx,ty,lines,o={}){
+  const op=o.opacity??1, sc=o.scale??1;
+  const cx=x+w/2, cy=y+h/2;
+  let s=`<g opacity="${op}" transform="translate(${cx} ${cy}) scale(${sc}) translate(${-cx} ${-cy})">`;
+  const bx=cl(tx,x+60,x+w-60);
+  s+=`<path d="M${bx-30} ${y+h-4} L${tx} ${ty} L${bx+30} ${y+h-4} Z" fill="#fff" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>`;
+  s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="40" fill="#fff" stroke="${INK}" stroke-width="6"/>`;
+  s+=`<path d="M${bx-27} ${y+h-6} L${bx+27} ${y+h-6}" stroke="#fff" stroke-width="10"/>`;
+  const lh=o.size?o.size*1.25:58, start=cy-(lines.length-1)*lh/2+ (o.size||46)*0.35;
+  lines.forEach((l,i)=>{s+=txt(cx,start+i*lh,l,{size:o.size||46,weight:700,fill:INK});});
+  return s+'</g>';
+}
+function sfx(x,y,s,o={}){
+  const rot=o.rot||0, sc=o.scale??1;
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})" opacity="${o.opacity??1}">${txt(0,0,s,{font:COMIC,size:o.size||70,weight:400,fill:o.fill||'#FFD23F',stroke:INK,sw:o.sw||10})}</g>`;
+}
+function headFront(cx,cy,r,o={}){
+  let s='';
+  s+=`<circle cx="${cx-r*.98}" cy="${cy+r*.08}" r="${r*.2}" fill="${SKIN_D}"/><circle cx="${cx+r*.98}" cy="${cy+r*.08}" r="${r*.2}" fill="${SKIN_D}"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${SKIN}"/>`;
+  s+=`<path d="M${cx-r*1.04} ${cy-r*.05} A${r*1.04} ${r*1.04} 0 0 1 ${cx+r*1.04} ${cy-r*.05} Q${cx+r*.55} ${cy-r*.62} ${cx-r*.1} ${cy-r*.42} Q${cx-r*.7} ${cy-r*.3} ${cx-r*1.04} ${cy-r*.05} Z" fill="${o.hair||HAIR}"/>`;
+  const ex=r*.36, ey=cy+r*.1;
+  const e=o.eyes||'normal';
+  for(const sgn of [-1,1]){
+    const x=cx+sgn*ex;
+    if(e==='wide'){s+=`<circle cx="${x}" cy="${ey}" r="${r*.21}" fill="#fff" stroke="${INK}" stroke-width="${r*.05}"/><circle cx="${x+(o.look||0)*r*.08}" cy="${ey+r*.02}" r="${r*.08}" fill="${INK}"/>`;}
+    else if(e==='happy'){s+=`<path d="M${x-r*.15} ${ey+r*.04} Q${x} ${ey-r*.16} ${x+r*.15} ${ey+r*.04}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;}
+    else if(e==='closed'){s+=`<path d="M${x-r*.15} ${ey} Q${x} ${ey+r*.12} ${x+r*.15} ${ey}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;}
+    else {s+=`<ellipse cx="${x}" cy="${ey}" rx="${r*.085}" ry="${r*.11}" fill="${INK}"/>`;}
+    if(o.brows==='worried'){s+=`<path d="M${x-sgn*r*.2} ${ey-r*.26} L${x+sgn*r*.12} ${ey-r*.36}" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;}
+    if(o.brows==='calm'){s+=`<path d="M${x-r*.15} ${ey-r*.3} Q${x} ${ey-r*.37} ${x+r*.15} ${ey-r*.3}" fill="none" stroke="${INK}" stroke-width="${r*.06}" stroke-linecap="round"/>`;}
+  }
+  if(o.blush){s+=`<ellipse cx="${cx-r*.55}" cy="${cy+r*.42}" rx="${r*.16}" ry="${r*.09}" fill="#F08F86" opacity=".6"/><ellipse cx="${cx+r*.55}" cy="${cy+r*.42}" rx="${r*.16}" ry="${r*.09}" fill="#F08F86" opacity=".6"/>`;}
+  const my=cy+r*.5, m=o.mouth||'flat';
+  if(m==='o') s+=`<ellipse cx="${cx}" cy="${my+r*.04}" rx="${r*.14}" ry="${r*.19}" fill="#6B2620"/>`;
+  else if(m==='smile') s+=`<path d="M${cx-r*.25} ${my-r*.03} Q${cx} ${my+r*.22} ${cx+r*.25} ${my-r*.03}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  else if(m==='grin') s+=`<path d="M${cx-r*.3} ${my-r*.06} Q${cx} ${my+r*.36} ${cx+r*.3} ${my-r*.06} Z" fill="#6B2620" stroke="${INK}" stroke-width="${r*.05}" stroke-linejoin="round"/><path d="M${cx-r*.24} ${my-r*.02} L${cx+r*.24} ${my-r*.02}" stroke="#fff" stroke-width="${r*.07}"/>`;
+  else if(m==='wavy') s+=`<path d="M${cx-r*.26} ${my} q${r*.087} ${-r*.1} ${r*.173} 0 t${r*.173} 0 t${r*.173} 0" fill="none" stroke="${INK}" stroke-width="${r*.06}" stroke-linecap="round"/>`;
+  else s+=`<path d="M${cx-r*.18} ${my} L${cx+r*.18} ${my}" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  if(o.sweat){s+=`<path d="M${cx+r*.95} ${cy-r*.55} q${r*.17} ${r*.3} 0 ${r*.38} q${-r*.17} ${-r*.08} 0 ${-r*.38} Z" fill="#7EC8F2" stroke="${INK}" stroke-width="3"/>`;
+    s+=`<path d="M${cx-r*1.05} ${cy-r*.35} q${r*.13} ${r*.24} 0 ${r*.3} q${-r*.13} ${-r*.06} 0 ${-r*.3} Z" fill="#7EC8F2" stroke="${INK}" stroke-width="3"/>`;}
+  return s;
+}
+function headProfile(cx,cy,r,o={}){ // faces right
+  let s='';
+  s+=`<circle cx="${cx-r*.12}" cy="${cy-r*.1}" r="${r*1.02}" fill="${o.hair||HAIR}"/>`;
+  s+=`<circle cx="${cx+r*.06}" cy="${cy+r*.08}" r="${r*.94}" fill="${SKIN}"/>`;
+  s+=`<path d="M${cx-r*.3} ${cy-r*.75} Q${cx+r*.3} ${cy-r*.6} ${cx+r*.8} ${cy-r*.62} Q${cx+r*.5} ${cy-r*1.0} ${cx-r*.1} ${cy-r*1.0} Z" fill="${o.hair||HAIR}"/>`;
+  s+=`<circle cx="${cx+r*.97}" cy="${cy+r*.12}" r="${r*.17}" fill="${SKIN}"/>`;
+  s+=`<circle cx="${cx-r*.18}" cy="${cy+r*.05}" r="${r*.2}" fill="${SKIN_D}"/>`;
+  const e=o.eyes||'normal', ex=cx+r*.52, ey=cy-r*.02;
+  if(e==='wide') s+=`<circle cx="${ex}" cy="${ey}" r="${r*.18}" fill="#fff" stroke="${INK}" stroke-width="${r*.05}"/><circle cx="${ex+r*.06}" cy="${ey}" r="${r*.07}" fill="${INK}"/>`;
+  else if(e==='closed') s+=`<path d="M${ex-r*.13} ${ey} Q${ex} ${ey+r*.12} ${ex+r*.13} ${ey}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  else if(e==='happy') s+=`<path d="M${ex-r*.13} ${ey+r*.03} Q${ex} ${ey-r*.14} ${ex+r*.13} ${ey+r*.03}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  else s+=`<ellipse cx="${ex}" cy="${ey}" rx="${r*.08}" ry="${r*.11}" fill="${INK}"/>`;
+  if(o.brows==='worried') s+=`<path d="M${ex-r*.16} ${ey-r*.3} L${ex+r*.16} ${ey-r*.22}" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  const m=o.mouth||'flat', mx=cx+r*.62, my=cy+r*.48;
+  if(m==='smile') s+=`<path d="M${mx-r*.18} ${my-r*.04} Q${mx+r*.04} ${my+r*.14} ${mx+r*.2} ${my-r*.08}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  else if(m==='o') s+=`<ellipse cx="${mx+r*.08}" cy="${my}" rx="${r*.09}" ry="${r*.13}" fill="#6B2620"/>`;
+  else if(m==='frown') s+=`<path d="M${mx-r*.12} ${my+r*.06} Q${mx+r*.05} ${my-r*.08} ${mx+r*.2} ${my+r*.06}" fill="none" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  else s+=`<path d="M${mx-r*.1} ${my} L${mx+r*.18} ${my}" stroke="${INK}" stroke-width="${r*.07}" stroke-linecap="round"/>`;
+  if(o.blush) s+=`<ellipse cx="${cx+r*.4}" cy="${cy+r*.35}" rx="${r*.15}" ry="${r*.08}" fill="#F08F86" opacity=".6"/>`;
+  return s;
+}
+function arm(sx,sy,ex,ey,hx,hy,o={}){
+  const c=o.sleeve||POLO;
+  return `<path d="M${sx} ${sy} L${ex} ${ey}" stroke="${c}" stroke-width="${o.w||40}" stroke-linecap="round"/>`+
+    `<path d="M${ex} ${ey} L${hx} ${hy}" stroke="${SKIN}" stroke-width="${(o.w||40)*.72}" stroke-linecap="round"/>`+
+    `<path d="M${sx} ${sy} L${lerp(sx,ex,.55)} ${lerp(sy,ey,.55)}" stroke="${c}" stroke-width="${(o.w||40)*1.12}" stroke-linecap="round"/>`+
+    `<circle cx="${hx}" cy="${hy}" r="${(o.w||40)*.5}" fill="${SKIN}"/>`;
+}
+function torsoFront(cx,top,bot,w,o={}){
+  const c=o.shirt||POLO;
+  let s=`<path d="M${cx-w/2} ${top+40} Q${cx-w/2} ${top} ${cx-w/2+50} ${top} L${cx+w/2-50} ${top} Q${cx+w/2} ${top} ${cx+w/2} ${top+40} L${cx+w/2-10} ${bot} L${cx-w/2+10} ${bot} Z" fill="${c}"/>`;
+  if(o.collar!==false){
+    s+=`<path d="M${cx-38} ${top} L${cx} ${top+48} L${cx+38} ${top} Z" fill="${SKIN}"/>`;
+    s+=`<path d="M${cx-48} ${top-4} L${cx-6} ${top+46} L${cx-14} ${top+60} L${cx-62} ${top+14} Z" fill="#fff"/>`;
+    s+=`<path d="M${cx+48} ${top-4} L${cx+6} ${top+46} L${cx+14} ${top+60} L${cx+62} ${top+14} Z" fill="#fff"/>`;
+    s+=`<path d="M${cx} ${top+48} L${cx} ${top+110}" stroke="${POLO_D}" stroke-width="5"/><circle cx="${cx}" cy="${top+75}" r="5" fill="#fff"/><circle cx="${cx}" cy="${top+98}" r="5" fill="#fff"/>`;
+    s+=`<circle cx="${cx+w*.27}" cy="${top+85}" r="22" fill="#fff"/><path d="M${cx+w*.27-11} ${top+85} l7 9 l15 -18" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  return s;
+}
+function phone(cx,cy,w,h,rot,screen,inner=''){
+  return `<g transform="translate(${cx} ${cy}) rotate(${rot})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${w*.16}" fill="#22252B"/>`+
+    `<rect x="${-w/2+w*.07}" y="${-h/2+w*.12}" width="${w*.86}" height="${h-w*.24}" rx="${w*.08}" fill="${screen}"/>${inner}</g>`;
+}
+function siteScreen(w,h,label,num,bar){ // content centred at 0,0 for small phones/laptop
+  return `<rect x="${-w*.43}" y="${-h/2+w*.12}" width="${w*.86}" height="${h*.16}" fill="${bar}"/>`+
+    txt(0,-h/2+w*.12+h*.115,label,{size:w*.16,fill:'#fff',weight:800})+
+    `<g transform="translate(0 ${-h*.06})"><rect x="${-w*.26}" y="${-h*.08}" width="${w*.52}" height="${h*.16}" rx="6" fill="#fff" opacity=".9"/><circle cx="${-w*.26}" cy="0" r="${h*.035}" fill="${bar}"/><circle cx="${w*.26}" cy="0" r="${h*.035}" fill="${bar}"/></g>`+
+    txt(0,h*.16,'SOLD',{size:w*.13,fill:'#fff',weight:700,opacity:.85})+
+    txt(0,h*.32,num,{size:w*.22,fill:'#fff',weight:800});
+}
+function vib(x,y,k,flip=1){ // vibration arcs
+  const s=6+3*Math.sin(k);
+  return `<g stroke="${INK}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".8">`+
+    `<path d="M${x+flip*s} ${y-22} q${flip*12} 22 0 44"/><path d="M${x+flip*(s+16)} ${y-34} q${flip*18} 34 0 68"/></g>`;
+}
+
+/* ---------- SCENE 1 : hook (0–5 s) ---------- */
+function scene1(t){
+  let s='';
+  // hallway
+  s+=`<rect width="${W}" height="${H}" fill="#D7DCE4"/>`;
+  for(let i=0;i<6;i++){s+=`<rect x="${i*340-40}" y="0" width="22" height="900" fill="#C6CCD6"/>`;}
+  s+=`<rect y="560" width="${W}" height="70" fill="${POLO}"/><rect y="630" width="${W}" height="14" fill="${NAVY}"/>`;
+  for(let i=0;i<5;i++){const x=200+i*400;s+=`<ellipse cx="${x}" cy="30" rx="110" ry="22" fill="#FFF6D6"/><ellipse cx="${x}" cy="60" rx="230" ry="60" fill="#FFF6D6" opacity=".25"/>`;}
+  s+=`<g transform="translate(1340 150)"><rect width="430" height="150" rx="16" fill="${NAVY}"/>${txt(170,72,'SECTION',{size:42,fill:'#fff'})}${txt(170,122,'112',{size:52,fill:'#fff',weight:900})}<path d="M330 75 h50 m-22 -24 l24 24 l-24 24" stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  s+=`<g transform="translate(150 170)"><rect width="300" height="300" rx="10" fill="#B9C0CC"/><rect x="20" y="20" width="260" height="260" fill="#A9B1BF"/><rect x="215" y="140" width="22" height="50" rx="6" fill="#D7DCE4"/></g>`;
+  s+=`<rect y="900" width="${W}" height="180" fill="#9AA3B2"/><rect y="900" width="${W}" height="10" fill="#7F8898"/>`;
+  s+=`<ellipse cx="960" cy="985" rx="230" ry="26" fill="#000" opacity=".15"/>`;
+  // zoom in slightly
+  const z=1+0.05*eo(pr(t,0,5));
+  s=`<g transform="translate(960 600) scale(${z}) translate(-960 -600)">`+s;
+  const bz=k=>Math.sin(t*95+k)*4;
+  // legs
+  const cx=960;
+  s+=`<rect x="${cx-85}" y="690" width="70" height="285" rx="20" fill="${PANTS}"/><rect x="${cx+15}" y="690" width="70" height="285" rx="20" fill="${PANTS}"/>`;
+  s+=`<ellipse cx="${cx-60}" cy="975" rx="60" ry="22" fill="${INK}"/><ellipse cx="${cx+60}" cy="975" rx="60" ry="22" fill="${INK}"/>`;
+  s+=torsoFront(cx,470,715,230);
+  // left arm holding laptop on forearm
+  s+=arm(cx-100,500,cx-175,615,cx-320,600);
+  // laptop
+  const lx=cx-300+bz(1), ly=598;
+  s+=`<g transform="translate(${lx} ${ly}) rotate(-4)"><rect x="-130" y="-8" width="260" height="18" rx="6" fill="#8A93A3"/>`+
+     `<g transform="skewX(-8)"><rect x="-120" y="-178" width="240" height="172" rx="10" fill="#4B5160"/><rect x="-108" y="-166" width="216" height="148" rx="4" fill="#2E7DD7"/>`+
+     `<rect x="-108" y="-166" width="216" height="30" fill="#1A5BA6"/>${txt(0,-144,'WEBSITE D',{size:20,fill:'#fff',weight:800})}${txt(0,-92,'SOLD',{size:20,fill:'#fff',weight:700,opacity:.85})}${txt(0,-46,'5,210',{size:44,fill:'#fff',weight:800})}</g></g>`;
+  s+=vib(lx+150,ly-110,t*30,1);
+  // right arm holding two phones fanned
+  const hx=cx+235, hy=410;
+  s+=phone(hx-35+bz(2),hy-95,110,200,-16,'#F28C28',siteScreen(110,200,'WEBSITE A','4,812','#C1631A'));
+  s+=phone(hx+45+bz(3),hy-90,110,200,14,'#8E5BD9',siteScreen(110,200,'WEBSITE B','3,977','#6A3CB0'));
+  s+=arm(cx+100,500,cx+190,600,hx,hy);
+  s+=vib(hx+120,hy-130,t*30+1,1);
+  // head
+  const shake=Math.sin(t*14)*3;
+  s+=`<g transform="translate(${shake} 0)">`+headFront(cx,385,82,{eyes:'wide',brows:'worried',mouth:t>0.8?'o':'wavy',sweat:true,look:Math.sin(t*3)})+`</g>`;
+  // phone C on head (wobble then fall)
+  let px=cx+shake, py=270, pr_=0;
+  if(t<3.0){pr_=Math.sin(t*9)*lerp(3,14,pr(t,1.2,3.0));px+=pr_*1.5;}
+  else if(t<3.55){const k=pr(t,3.0,3.55);px=cx+lerp(0,250,k);py=270+lerp(0,690,k*k)-120*Math.sin(Math.PI*k*0.5)*(1-k);pr_=lerp(14,200,k);}
+  else{const k=pr(t,3.55,4.05);px=cx+250+lerp(0,70,k);py=960-130*Math.sin(Math.PI*Math.min(k,1));pr_=200+lerp(0,170,k);if(t>4.05){const k2=pr(t,4.05,4.3);py=960-30*Math.sin(Math.PI*k2);pr_=370+lerp(0,20,k2);px=cx+320+lerp(0,20,k2);}}
+  s+=phone(px+(t<3?bz(4):0),py,110,200,pr_,'#2FA36B',siteScreen(110,200,'WEBSITE C','???','#1E7A4E'));
+  if(t<3) s+=vib(px+75,py,t*30+2,1);
+  s+='</g>';
+  // SFX
+  const flick=Math.floor(t*5)%2;
+  if(t<3.4) s+=sfx(1450+flick*20,300,'BZZT!',{rot:8,size:64});
+  if(t>0.3&&t<3.4) s+=sfx(560-flick*15,700,'BZZ!',{rot:-10,size:58});
+  if(t>3.55&&t<4.9){const k=back(pr(t,3.55,3.85));s+=burst(1500,800,k)+sfx(1500,825,'BOING!',{scale:k,rot:-8,size:96,fill:'#FF6F59'});}
+  // speech bubble
+  if(t>0.8){const k=back(pr(t,0.8,1.1));s+=bubble(120,90,620,190,800,330,['How many tickets','did we sell?'],{scale:k});}
+  return s;
+}
+function burst(x,y,k){
+  let pts='';for(let i=0;i<24;i++){const a=i/24*Math.PI*2, r=(i%2?95:160)*k;pts+=`${x+Math.cos(a)*r*1.3},${y+Math.sin(a)*r*.8} `;}
+  return `<polygon points="${pts}" fill="#FFF3B0" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>`;
+}
+
+/* ---------- SCENE 2 : problem (5–15 s) ---------- */
+const STICKY=['#FFE45C','#FF9EC4','#8FE3A1','#9FD3FF','#FFB870'];
+function sticky(x,y,r,c,seed){
+  let lines='';for(let i=0;i<3;i++){lines+=`<path d="M12 ${22+i*16} q14 ${(seed*7+i*3)%6-3} ${28+(seed*5+i)%20} 0" stroke="#555" stroke-width="3" fill="none" opacity=".55"/>`;}
+  return `<g transform="translate(${x} ${y}) rotate(${r})"><rect width="76" height="76" fill="${c}"/><rect width="76" height="12" fill="#000" opacity=".06"/>${lines}</g>`;
+}
+function scene2(u){
+  let s='';
+  s+=`<rect width="${W}" height="${H}" fill="#EFE5CE"/>`;
+  s+=`<rect y="0" width="${W}" height="30" fill="#E2D6BA"/>`;
+  // window
+  s+=`<g transform="translate(110 130)"><rect width="300" height="260" rx="8" fill="#fff"/><rect x="14" y="14" width="272" height="232" fill="#BFE3F7"/><path d="M150 14 V246 M14 130 H286" stroke="#fff" stroke-width="10"/></g>`;
+  // door + coworker
+  s+=`<rect x="1540" y="150" width="300" height="760" fill="#C9B48E"/><rect x="1565" y="175" width="250" height="735" fill="#3C3A45"/>`;
+  const cw=u<2.8?0:(u<7.6?eo(pr(u,2.8,3.3)):1-eio(pr(u,8.6,9.6)));
+  if(cw>0){
+    const ox=lerp(1980,1700,cw);
+    s+=`<g transform="translate(${ox} 0) rotate(${-14*cw} 0 900)">`;
+    s+=`<rect x="-30" y="560" width="200" height="380" rx="40" fill="#2A9D8F"/>`;
+    s+=arm(10,600,-60,690,-120,640,{sleeve:'#2A9D8F',w:36});
+    let curls='';for(let i=0;i<9;i++){const a=Math.PI*(1.05+i*0.11);curls+=`<circle cx="${60+Math.cos(a)*68}" cy="${470+Math.sin(a)*68}" r="26" fill="#1E1A18"/>`;}
+    s+=curls+headFront(60,480,72,{hair:'#1E1A18',eyes:'normal',mouth:u>3.2&&u<7.4&&Math.floor(u*8)%2?'o':'flat',brows:'worried'});
+    s+=`</g>`;
+  }
+  s+=`<rect x="1540" y="150" width="300" height="25" fill="#B19C76"/><rect x="1515" y="150" width="25" height="760" fill="#B19C76"/>`;
+  // floor
+  s+=`<rect y="910" width="${W}" height="170" fill="#B99B78"/>`;
+  // wall stickies
+  [[480,120,-8],[580,190,6],[470,250,12],[1430,240,-6],[1450,380,9]].forEach((p,i)=>s+=sticky(p[0],p[1],p[2],STICKY[i%5],i));
+  // monitor
+  s+=`<rect x="1040" y="640" width="60" height="80" fill="#5C6270"/><rect x="960" y="712" width="220" height="16" rx="6" fill="#5C6270"/>`;
+  s+=`<rect x="700" y="170" width="740" height="480" rx="18" fill="#2B2F38"/><rect x="722" y="192" width="696" height="436" fill="#fff"/>`;
+  // spreadsheet
+  const cols=8, rows=11, cw2=696/cols, ch=436/(rows+1);
+  s+=`<rect x="722" y="192" width="696" height="${ch}" fill="#1F7A45"/>`+txt(1070,192+ch*.72,'TICKETS_FINAL_v7_REAL.xlsx',{size:24,fill:'#fff'});
+  const filled=u<3.4?Math.floor(u*22):Math.floor(3.4*22);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const x=722+c*cw2, y=192+ch*(r+1), idx=r*cols+c;
+    s+=`<rect x="${x}" y="${y}" width="${cw2}" height="${ch}" fill="${r===0?'#E6F2EA':'#fff'}" stroke="#C9D4CC" stroke-width="2"/>`;
+    if(r===0){s+=txt(x+cw2/2,y+ch*.7,['GAME','SITE A','SITE B','SITE C','SITE D','TOTAL','LEFT','??'][c],{size:20,fill:'#1F7A45'});}
+    else if(idx-cols<filled){const v=((r*9301+c*49297)%9000)+100;s+=txt(x+cw2-10,y+ch*.7,c===7?'?':String(v),{size:20,weight:500,fill:c===7?'#D2433A':'#333',anchor:'end'});}
+    if(idx-cols===filled&&u<3.4) s+=`<rect x="${x+3}" y="${y+3}" width="${cw2-6}" height="${ch-6}" fill="none" stroke="#1F7A45" stroke-width="4"/>`;
+  }
+  // monitor stickies
+  [[690,160,-14],[1390,150,10],[680,420,-6],[1400,440,8],[1395,560,-12],[700,560,15]].forEach((p,i)=>s+=sticky(p[0],p[1],p[2],STICKY[(i+2)%5],i+5));
+  // desk
+  s+=`<rect x="250" y="720" width="1300" height="34" rx="8" fill="#A9774F"/><rect x="290" y="754" width="1220" height="230" fill="#8E623F"/>`;
+  [[330,800,-10],[430,790,8],[540,820,-4],[650,800,12],[1200,795,-8],[1300,815,6],[1400,790,-12],[760,830,5],[880,805,-9],[1000,830,7],[1100,800,11]].forEach((p,i)=>s+=sticky(p[0],p[1],p[2],STICKY[i%5],i+11));
+  // desk-top stickies + coffee
+  s+=`<g transform="translate(1250 650)"><rect width="70" height="70" rx="8" fill="#fff" stroke="${INK}" stroke-width="4"/><path d="M70 18 q30 0 30 18 q0 18 -30 18" fill="none" stroke="${INK}" stroke-width="6"/></g>`;
+  // chair
+  s+=`<rect x="300" y="530" width="40" height="270" rx="16" fill="#3D4250"/><rect x="300" y="760" width="260" height="34" rx="14" fill="#3D4250"/>`;
+  // manager in profile
+  const typing=u<3.35;
+  const down=eio(pr(u,5.0,7.0));
+  const ang=down*62 + (u>3.35&&u<5?Math.sin((u-3.35)*30)*1.5*(1-pr(u,3.35,4)):0);
+  s+=`<rect x="380" y="750" width="230" height="60" rx="28" fill="${PANTS}"/><rect x="550" y="760" width="56" height="200" rx="24" fill="${PANTS}"/><ellipse cx="610" cy="962" rx="58" ry="20" fill="${INK}"/>`;
+  s+=`<g transform="rotate(${ang} 440 780)">`;
+  s+=`<path d="M370 790 L370 560 Q370 510 420 510 L470 510 Q520 510 520 560 L520 790 Z" fill="${POLO}"/>`;
+  s+=`<path d="M470 512 L510 512 L520 545 Z" fill="#fff"/>`;
+  const j=typing?Math.sin(u*44)*7:0, j2=typing?Math.cos(u*39)*7:0;
+  s+=arm(470,560,540,680,660+j,700+j*0.6);
+  s+=headProfile(470,440,74,{eyes:u<3.35?'normal':(u<5.0?'wide':'closed'),mouth:u<3.35?'flat':(u<5?'o':'frown'),brows:u>3.35?'worried':null});
+  s+=`</g>`;
+  // keyboard (in front of arm)
+  s+=`<rect x="600" y="704" width="200" height="18" rx="5" fill="#E8E8E8" stroke="#999" stroke-width="2"/>`;
+  s+=arm(445,565,520+j2*.3,690,630+j2,706,{w:40});
+  if(down>0){} // hand on keyboard remains — head drops
+  // SFX
+  if(typing){const k=Math.floor(u*4); s+=sfx(560+(k%3)*90,620-(k%2)*50,k%2?'CLACK':'CLICK',{size:48,rot:(k%2?-10:8)});
+    const k2=Math.floor(u*4+2); s+=sfx(700+(k2%3)*60,560+(k2%2)*30,k2%2?'CLACK':'TAP',{size:40,rot:(k2%2?6:-8),fill:'#fff'});}
+  if(u>3.35&&u<5) s+=sfx(470,320,'!',{size:110,fill:'#FF6F59',scale:back(pr(u,3.35,3.6))});
+  if(u>3.2&&u<8.2){const k=back(pr(u,3.2,3.5)), f=1-pr(u,7.9,8.2);s+=bubble(880,40,620,160,1640,380,['Hey… we sold the','same seats twice.'],{scale:k,opacity:f,size:44});}
+  if(u>5.2&&u<8.6){const k=pr(u,5.2,8.6);const wob=Math.sin(u*10)*8;s+=sfx(260+k*60,330+wob,'wah',{size:62,rot:-12+wob*0.5,fill:'#9FD3FF',opacity:cl(4-4*k+0.3)})+sfx(330+k*60,440-wob,'wah-wahhh…',{size:54,rot:-6-wob*0.5,fill:'#9FD3FF',opacity:cl(1.6-k)});}
+  // overlay
+  if(u>7.2){const k=back(pr(u,7.2,7.55));s+=`<rect width="${W}" height="${H}" fill="#000" opacity="${0.35*pr(u,7.2,7.6)}"/>`;
+    s+=`<g transform="translate(960 470) scale(${k}) rotate(-3)"><rect x="-470" y="-95" width="940" height="170" rx="26" fill="#fff" stroke="${INK}" stroke-width="8"/>${txt(0,22,'Sound familiar?',{size:96,weight:900,fill:NAVY})}</g>`;}
+  return s;
+}
+
+/* ---------- SCENE 3 : app (15–35 s) ---------- */
+const GAMES=[{d:'Sat, Nov 21',sold:4812},{d:'Sun, Nov 29',sold:5360},{d:'Sat, Dec 5',sold:3105}];
+const CAP=6000;
+function appHome(u,x,y,w){
+  let s='';
+  s+=`<rect x="${x}" y="${y}" width="${w}" height="150" fill="${NAVY}"/>`;
+  s+=txt(x+30,y+78,'SeatSync',{size:44,fill:'#fff',anchor:'start',weight:800});
+  s+=txt(x+30,y+122,'Home · all websites',{size:24,fill:'#C9D3E6',anchor:'start',weight:500});
+  s+=`<circle cx="${x+w-50}" cy="${y+72}" r="10" fill="#4ADE80"/>`+txt(x+w-68,y+81,'LIVE',{size:22,fill:'#4ADE80',anchor:'end',weight:800});
+  GAMES.forEach((g,i)=>{
+    let sold=g.sold;
+    if(i===0&&u>=6.6) sold+=1;
+    if(i===1) sold=lerp(5360,5400,eio(pr(u,11.3,12.3)));
+    const left=CAP-sold, cy=y+180+i*205;
+    const flash=i===0?Math.max(0,1-pr(u,6.6,7.6))*(u>=6.6?1:0):0;
+    const low=i===1&&u>=12.3;
+    s+=`<rect x="${x+22}" y="${cy}" width="${w-44}" height="180" rx="20" fill="#fff" stroke="${low?'#F59E0B':'#DCE3EE'}" stroke-width="${low?5:3}"/>`;
+    if(flash>0) s+=`<rect x="${x+22}" y="${cy}" width="${w-44}" height="180" rx="20" fill="#4ADE80" opacity="${flash*.35}"/>`;
+    s+=txt(x+48,cy+46,`Game ${i+1} · ${g.d}`,{size:26,fill:NAVY,anchor:'start',weight:800});
+    s+=txt(x+48,cy+90,'Sold',{size:20,fill:'#6B7A90',anchor:'start',weight:600});
+    s+=txt(x+48,cy+128,fmt(sold),{size:38,fill:NAVY,anchor:'start',weight:800});
+    s+=txt(x+w-48,cy+90,'Seats left',{size:20,fill:'#6B7A90',anchor:'end',weight:600});
+    s+=txt(x+w-48,cy+128,fmt(left),{size:38,fill:low?'#D97706':NAVY,anchor:'end',weight:800});
+    s+=`<rect x="${x+48}" y="${cy+148}" width="${w-96}" height="12" rx="6" fill="#E6EBF3"/><rect x="${x+48}" y="${cy+148}" width="${(w-96)*sold/CAP}" height="12" rx="6" fill="${low?'#F59E0B':NAVY}"/>`;
+  });
+  const by=y+810;
+  s+=`<rect x="${x+22}" y="${by}" width="${(w-58)/2}" height="64" rx="16" fill="${NAVY}"/>`+txt(x+22+(w-58)/4,by+42,'Payouts',{size:26,fill:'#fff'});
+  s+=`<rect x="${x+36+(w-58)/2}" y="${by}" width="${(w-58)/2}" height="64" rx="16" fill="#fff" stroke="${NAVY}" stroke-width="3"/>`+txt(x+36+(w-58)*3/4,by+42,'Invite staff',{size:26,fill:NAVY});
+  return s;
+}
+const PAY=[{n:'Website A',sales:'$96,240',paid:'$96,240',ok:true},{n:'Website B',sales:'$71,580',paid:'$68,900',ok:false},{n:'Website C',sales:'$54,310',paid:'$54,310',ok:true},{n:'Website D',sales:'$88,730',paid:'$88,730',ok:true}];
+function appPayouts(u,x,y,w){
+  let s='';
+  s+=`<rect x="${x}" y="${y}" width="${w}" height="150" fill="${NAVY}"/>`;
+  s+=txt(x+30,y+78,'Payouts',{size:44,fill:'#fff',anchor:'start',weight:800});
+  s+=txt(x+30,y+122,'Sales vs. what each site paid',{size:24,fill:'#C9D3E6',anchor:'start',weight:500});
+  PAY.forEach((p,i)=>{
+    const cy=y+180+i*160;
+    const st=p.ok?1:back(pr(u,16.4,16.75));
+    const hl=!p.ok&&u>16.4?0.5+0.5*Math.sin((u-16.4)*8):0;
+    s+=`<rect x="${x+22}" y="${cy}" width="${w-44}" height="140" rx="20" fill="${!p.ok&&u>16.4?'#FFF1F0':'#fff'}" stroke="${!p.ok&&u>16.4?'#E5484D':'#DCE3EE'}" stroke-width="${!p.ok&&u>16.4?4+hl*3:3}"/>`;
+    s+=txt(x+48,cy+48,p.n,{size:28,fill:NAVY,anchor:'start',weight:800});
+    s+=txt(x+48,cy+90,`Sales ${p.sales}`,{size:21,fill:'#6B7A90',anchor:'start',weight:600});
+    s+=txt(x+48,cy+120,`Paid  ${p.paid}`,{size:21,fill:'#6B7A90',anchor:'start',weight:600});
+    const pw=p.ok?140:140, px=x+w-48-pw/2, py=cy+70;
+    s+=`<g transform="translate(${px} ${py}) scale(${st})"><rect x="${-pw/2}" y="-24" width="${pw}" height="48" rx="24" fill="${p.ok?'#DCFCE7':'#E5484D'}"/>${txt(0,9,p.ok?'Matches':'Flagged',{size:24,fill:p.ok?'#15803D':'#fff',weight:800})}</g>`;
+  });
+  return s;
+}
+function sitePanel(x,y,name,color,u,mode){ // mode: 'src' seat sells, 'mirror' seat removed
+  let s=`<g transform="translate(${x} ${y})"><rect width="430" height="200" rx="20" fill="#fff" stroke="#DCE3EE" stroke-width="3"/><rect width="430" height="54" rx="20" fill="${color}"/><rect y="34" width="430" height="20" fill="${color}"/>`;
+  s+=txt(24,37,name,{size:26,fill:'#fff',anchor:'start',weight:800});
+  const sold=[[0,0],[1,0],[2,1],[6,0],[7,2],[3,2],[0,2]];
+  for(let r=0;r<3;r++)for(let c=0;c<8;c++){
+    const sx=30+c*48, sy=72+r*40;
+    const isT=(r===1&&c===4);
+    const pre=sold.some(p=>p[0]===c&&p[1]===r);
+    if(isT){
+      if(mode==='src'){
+        const sd=u>=6.6;
+        s+=`<rect x="${sx}" y="${sy}" width="36" height="30" rx="7" fill="${sd?NAVY:'#FFD23F'}" stroke="${INK}" stroke-width="${sd?0:3}"/>`;
+        if(sd){const k=back(pr(u,6.6,6.9));s+=`<g transform="translate(${sx+18} ${sy-22}) scale(${k})"><rect x="-38" y="-18" width="76" height="32" rx="10" fill="${NAVY}"/>${txt(0,8,'SOLD',{size:20,fill:'#fff'})}</g>`;}
+      } else {
+        const k=u<7.2?1:1-eo(pr(u,7.2,7.55));
+        if(k>0) s+=`<g transform="translate(${sx+18} ${sy+15}) scale(${k})"><rect x="-18" y="-15" width="36" height="30" rx="7" fill="#FFD23F" stroke="${INK}" stroke-width="3"/></g>`;
+        if(u>7.2&&u<8.2){const pk=pr(u,7.2,8.2);for(let i=0;i<6;i++){const a=i/6*Math.PI*2;s+=`<circle cx="${sx+18+Math.cos(a)*40*pk}" cy="${sy+15+Math.sin(a)*40*pk}" r="${6*(1-pk)}" fill="${color}"/>`;}}
+        if(u>=7.55) s+=`<rect x="${sx}" y="${sy}" width="36" height="30" rx="7" fill="none" stroke="#C9D3E6" stroke-width="3" stroke-dasharray="6 5"/>`;
+      }
+    } else s+=`<rect x="${sx}" y="${sy}" width="36" height="30" rx="7" fill="${pre?'#B8C2D1':'#E9EEF5'}"/>`;
+  }
+  return s+'</g>';
+}
+function ding(x,y,k){
+  if(k<=0||k>=1) return '';
+  const sc=back(cl(k*3)), op=1-pr(k,0.6,1);
+  let rays='';for(let i=0;i<8;i++){const a=i/8*Math.PI*2;rays+=`<path d="M${Math.cos(a)*44} ${Math.sin(a)*44} L${Math.cos(a)*66} ${Math.sin(a)*66}" stroke="#F5B700" stroke-width="7" stroke-linecap="round"/>`;}
+  return `<g transform="translate(${x} ${y}) scale(${sc})" opacity="${op}">${rays}${txt(0,12,'ding!',{size:36,fill:NAVY,weight:900,extra:'font-style="italic"'})}</g>`;
+}
+function scene3(u){
+  let s=`<rect width="${W}" height="${H}" fill="#EEF2F8"/>`;
+  s+=`<circle cx="1650" cy="180" r="300" fill="#E1E8F3"/><circle cx="200" cy="980" r="380" fill="#E1E8F3"/>`;
+  // manager, calm
+  const mIn=eo(pr(u,0,0.8)), bob=Math.sin(u*2.2)*4;
+  s+=`<g transform="translate(${lerp(-200,0,mIn)} ${bob})" opacity="${mIn}">`;
+  const cx=330;
+  s+=`<rect x="${cx-75}" y="700" width="62" height="260" rx="20" fill="${PANTS}"/><rect x="${cx+13}" y="700" width="62" height="260" rx="20" fill="${PANTS}"/>`;
+  s+=`<ellipse cx="${cx-50}" cy="962" rx="54" ry="20" fill="${INK}"/><ellipse cx="${cx+50}" cy="962" rx="54" ry="20" fill="${INK}"/>`;
+  s+=torsoFront(cx,490,720,210);
+  s+=arm(cx-92,520,cx-130,630,cx-112,730);
+  s+=phone(cx+70,560,64,116,-8,NAVY,`<rect x="-24" y="-44" width="48" height="10" fill="#fff" opacity=".8"/><rect x="-24" y="-26" width="48" height="16" rx="3" fill="#fff" opacity=".9"/><rect x="-24" y="-4" width="48" height="16" rx="3" fill="#fff" opacity=".9"/><rect x="-24" y="18" width="48" height="16" rx="3" fill="#fff" opacity=".9"/>`);
+  s+=arm(cx+92,520,cx+120,630,cx+60,590);
+  s+=headFront(cx,410,78,{eyes:(u>6.6&&u<7.4)||(u>12.3&&u<13)||(u>16.4&&u<17.2)?'happy':'normal',brows:'calm',mouth:'smile',blush:true});
+  s+=`</g>`;
+  // big phone
+  const pIn=eo(pr(u,0.1,0.9));
+  const PX=740, PY=lerp(1100,70,pIn), PW=460, PH=940;
+  s+=`<g transform="translate(970 70) scale(0.9) translate(-970 -70)">`;
+  s+=`<rect x="${PX+14}" y="${PY+22}" width="${PW}" height="${PH}" rx="64" fill="#000" opacity=".12"/>`;
+  s+=`<rect x="${PX}" y="${PY}" width="${PW}" height="${PH}" rx="64" fill="#1E2128"/>`;
+  const SX=PX+18, SY=PY+18, SW=PW-36, SH=PH-36;
+  s+=`<clipPath id="scr"><rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" rx="48"/></clipPath>`;
+  s+=`<g clip-path="url(#scr)"><rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="#F5F7FB"/>`;
+  const slide=eio(pr(u,15.5,16.2));
+  s+=`<g transform="translate(${-SW*slide} 0)">${appHome(u,SX,SY+40,SW)}</g>`;
+  if(slide>0) s+=`<g transform="translate(${SW*(1-slide)} 0)">${appPayouts(u,SX,SY+40,SW)}</g>`;
+  s+=`<rect x="${SX}" y="${SY}" width="${SW}" height="40" fill="${NAVY}"/>`+txt(SX+50,SY+30,'9:41',{size:20,fill:'#fff',weight:700});
+  s+=`<rect x="${PX+PW/2-60}" y="${SY+6}" width="120" height="26" rx="13" fill="#1E2128"/>`;
+  s+=`</g></g>`;
+  // moment 1: website panels
+  const m1=u<11?eo(pr(u,5.3,6.0)):1-eo(pr(u,11,11.5));
+  if(m1>0){
+    const dx=lerp(120,0,m1);
+    s+=`<g opacity="${m1}" transform="translate(${dx} 0)">`;
+    const ys=[150,420,690];
+    ys.forEach((yy,i)=>{
+      const flow=(u*0.9+i*0.3)%1;
+      s+=`<path d="M1440 ${yy+100} L${PX+PW+10} ${300+i*40}" stroke="#9FB0C9" stroke-width="5" stroke-dasharray="4 14" stroke-linecap="round"/>`;
+      s+=`<circle cx="${lerp(1440,PX+PW+10,flow)}" cy="${lerp(yy+100,300+i*40,flow)}" r="9" fill="${NAVY}"/>`;
+    });
+    s+=sitePanel(1440,150,'Website A','#F28C28',u,'src');
+    s+=sitePanel(1440,420,'Website B','#8E5BD9',u,'mirror');
+    s+=sitePanel(1440,690,'Website C','#2FA36B',u,'mirror');
+    if(u>6.6&&u<7.2) s+=sfx(1660,140,'SOLD!',{size:54,rot:-6,scale:back(pr(u,6.6,6.85)),fill:'#FFD23F'});
+    if(u>7.2&&u<8.6) {s+=sfx(1890,560,'POOF',{size:46,rot:10,fill:'#fff',anchor:'end',opacity:1-pr(u,8.1,8.6)});s+=sfx(1890,830,'POOF',{size:46,rot:-8,fill:'#fff',opacity:1-pr(u,8.1,8.6)});}
+    s+=`</g>`;
+  }
+  s+=ding(PX+PW+70,300,pr(u,6.6,7.8));
+  // moment 2: notification
+  if(u>12.1&&u<15.6){
+    const k=u<15.1?eo(pr(u,12.1,12.45)):1-eio(pr(u,15.1,15.5));
+    const ny=lerp(PY-160,PY+60,k);
+    s+=`<g transform="translate(${PX-40} ${ny})"><rect x="6" y="10" width="${PW+80}" height="150" rx="30" fill="#000" opacity=".15"/><rect width="${PW+80}" height="150" rx="30" fill="#fff" stroke="#DCE3EE" stroke-width="3"/>`;
+    s+=`<rect x="26" y="26" width="56" height="56" rx="14" fill="${NAVY}"/>${txt(54,66,'S',{size:36,fill:'#fff',weight:900})}`;
+    s+=txt(100,52,'SeatSync · now',{size:22,fill:'#6B7A90',anchor:'start',weight:600});
+    s+=txt(100,96,'10% of seats left',{size:36,fill:NAVY,anchor:'start',weight:800});
+    s+=txt(100,132,'Game 2 · Sun, Nov 29',{size:22,fill:'#6B7A90',anchor:'start',weight:600});
+    s+=`</g>`;
+    // bell
+    const bk=back(pr(u,12.3,12.6)), sw=Math.sin((u-12.3)*18)*14*Math.max(0,1-pr(u,12.3,13.5));
+    s+=`<g transform="translate(1560 420) scale(${bk}) rotate(${sw} 0 -60)" opacity="${1-pr(u,15,15.5)}"><path d="M-70 40 Q-70 -80 0 -90 Q70 -80 70 40 L90 70 L-90 70 Z" fill="#F5B700" stroke="${INK}" stroke-width="8" stroke-linejoin="round"/><circle cx="0" cy="88" r="20" fill="#F5B700" stroke="${INK}" stroke-width="8"/><circle cx="0" cy="-100" r="12" fill="${INK}"/></g>`;
+  }
+  s+=ding(PX+PW+70,180,pr(u,12.3,13.5));
+  // moment 3
+  s+=ding(PX+PW+70,500,pr(u,16.4,17.6));
+  if(u>16.4){const k=back(pr(u,16.4,16.7)), f=1-pr(u,19.5,20);
+    s+=`<g transform="translate(1560 470) rotate(-10) scale(${k})" opacity="${f}"><rect x="-200" y="-70" width="400" height="140" rx="18" fill="none" stroke="#E5484D" stroke-width="12"/>${txt(0,30,'FLAGGED',{size:84,fill:'#E5484D',weight:900,font:COMIC})}</g>`;}
+  return s;
+}
+
+/* ---------- SCENE 4 : closing (35–45 s) ---------- */
+function scene4(u){
+  let s='';
+  s+=`<rect width="${W}" height="${H}" fill="#F3EBD8"/><rect y="0" width="${W}" height="30" fill="#E6DBC2"/>`;
+  s+=`<g transform="translate(110 130)"><rect width="300" height="260" rx="8" fill="#fff"/><rect x="14" y="14" width="272" height="232" fill="#BFE3F7"/><circle cx="220" cy="80" r="36" fill="#FFE07A"/><path d="M150 14 V246 M14 130 H286" stroke="#fff" stroke-width="10"/></g>`;
+  // plant
+  s+=`<g transform="translate(1660 560)"><path d="M0 0 q-60 -120 -10 -230 M0 0 q40 -140 90 -200 M0 0 q-10 -160 20 -260" stroke="#2F8F5B" stroke-width="16" fill="none" stroke-linecap="round"/><ellipse cx="-30" cy="-170" rx="40" ry="18" fill="#3FAE6E" transform="rotate(-60 -30 -170)"/><ellipse cx="70" cy="-160" rx="40" ry="18" fill="#3FAE6E" transform="rotate(-40 70 -160)"/><ellipse cx="15" cy="-230" rx="40" ry="18" fill="#3FAE6E" transform="rotate(-80 15 -230)"/><path d="M-60 0 L60 0 L45 110 L-45 110 Z" fill="#C8643C"/></g>`;
+  s+=`<rect y="910" width="${W}" height="170" fill="#BFA27E"/>`;
+  // desk
+  s+=`<rect x="900" y="640" width="900" height="34" rx="8" fill="#A9774F"/><rect x="940" y="674" width="820" height="290" fill="#8E623F"/>`;
+  // mug
+  s+=`<g transform="translate(1500 570)"><rect width="70" height="70" rx="8" fill="#fff" stroke="${INK}" stroke-width="4"/><path d="M70 18 q30 0 30 18 q0 18 -30 18" fill="none" stroke="${INK}" stroke-width="6"/><path d="M20 -10 q10 -20 0 -40 M45 -10 q10 -20 0 -40" stroke="#bbb" stroke-width="5" fill="none" opacity="${0.5+0.3*Math.sin(u*3)}"/></g>`;
+  // retired drawer (pulled out)
+  const dr=eo(pr(u,0.2,1.0));
+  const dy=lerp(720,760,dr);
+  s+=`<g transform="translate(0 ${dy-720})">`;
+  s+=`<path d="M1060 ${720} L1600 ${720} L1640 ${690} L1100 ${690} Z" fill="#5E3F27"/>`;
+  // contents
+  s+=phone(1180,708,60,110,-70,'#F28C28')+phone(1270,712,60,110,-100,'#8E5BD9')+phone(1360,706,60,110,-80,'#2FA36B');
+  s+=`<g transform="translate(1490 708) rotate(-6)"><rect x="-100" y="-26" width="200" height="40" rx="8" fill="#4B5160"/><rect x="-90" y="-20" width="180" height="20" fill="#2E7DD7"/></g>`;
+  s+=`<rect x="1040" y="720" width="580" height="200" rx="10" fill="#B4855C" stroke="#7A5233" stroke-width="5"/>`;
+  s+=`<rect x="1190" y="760" width="280" height="80" rx="10" fill="#F7F1E3" stroke="${INK}" stroke-width="5"/>`+txt(1330,816,'RETIRED',{size:48,weight:900,fill:NAVY});
+  s+=`<rect x="1290" y="865" width="80" height="18" rx="9" fill="#5E3F27"/>`;
+  s+=`</g>`;
+  s+=`<rect x="940" y="674" width="820" height="16" fill="#7A5233" opacity=".5"/>`;
+  // chair leaning back + manager
+  const rock=Math.sin(u*1.6)*2.5;
+  s+=`<g transform="rotate(${rock} 560 860)">`;
+  s+=`<rect x="500" y="860" width="24" height="60" fill="#3D4250"/><rect x="420" y="910" width="190" height="16" rx="8" fill="#3D4250"/>`;
+  s+=`<g transform="rotate(-22 560 820)"><rect x="330" y="450" width="44" height="370" rx="18" fill="#3D4250"/></g>`;
+  s+=`<rect x="380" y="800" width="300" height="38" rx="16" fill="#3D4250" transform="rotate(-6 530 820)"/>`;
+  // legs up onto desk
+  s+=`<path d="M560 800 L820 700 L1000 640" stroke="${PANTS}" stroke-width="62" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+  s+=`<ellipse cx="1020" cy="612" rx="34" ry="50" fill="${INK}" transform="rotate(-20 1020 612)"/>`;
+  // torso leaning back
+  s+=`<g transform="rotate(-26 540 800)">`;
+  s+=arm(560,560,470,470,500,410);
+  s+=`<path d="M450 820 L450 560 Q450 510 500 510 L560 510 Q610 510 610 560 L610 820 Z" fill="${POLO}"/>`;
+  s+=`<path d="M560 512 L600 512 L610 545 Z" fill="#fff"/>`;
+  s+=headProfile(555,430,78,{eyes:'happy',mouth:'smile',blush:true});
+  s+=`</g>`;
+  // arm holding phone in front
+  s+=arm(560,600,690,560,780,470);
+  s+=phone(800,440,70,128,18,NAVY,`<rect x="-26" y="-48" width="52" height="12" fill="#fff" opacity=".8"/><rect x="-26" y="-28" width="52" height="18" rx="3" fill="#fff" opacity=".9"/><rect x="-26" y="-4" width="52" height="18" rx="3" fill="#fff" opacity=".9"/><rect x="-26" y="20" width="52" height="18" rx="3" fill="#fff" opacity=".9"/>`);
+  s+=`</g>`;
+  // little hearts / sparkles of contentment
+  for(let i=0;i<3;i++){const k=((u*0.5+i/3)%1);s+=`<g transform="translate(${430+i*60} ${300-k*160})" opacity="${Math.sin(Math.PI*k)*.8}">${txt(0,0,'♪',{size:54,fill:NAVY,weight:700})}</g>`;}
+  // end card wipe
+  if(u>5.4){
+    const k=eio(pr(u,5.4,6.1));
+    s+=`<circle cx="800" cy="440" r="${k*2300}" fill="#fff"/>`;
+  }
+  if(u>5.9){
+    const k=back(pr(u,5.9,6.5)), f=pr(u,5.9,6.3);
+    s+=`<g transform="translate(960 560) scale(${lerp(0.7,1,k)})" opacity="${f}">${txt(0,0,'SeatSync',{size:220,weight:800,fill:NAVY})}</g>`;
+    const sp=pr(u,6.3,7.6);
+    if(sp>0&&sp<1){for(let i=0;i<10;i++){const a=i/10*Math.PI*2+0.3, r=lerp(420,620,eo(sp));const x=960+Math.cos(a)*r*1.2, y=490+Math.sin(a)*r*.45;s+=`<g transform="translate(${x} ${y}) scale(${1-sp})"><path d="M0 -26 L7 -7 L26 0 L7 7 L0 26 L-7 7 L-26 0 L-7 -7 Z" fill="${i%2?'#F5B700':NAVY}"/></g>`;}}
+  }
+  return s;
+}
+
+/* ---------- captions + transitions ---------- */
+const CAPS=[[15.6,21,'SeatSync puts every ticket website in one live count.'],[21,26.2,'It takes sold seats off the other sites,'],[26.2,30.5,'warns you when seats run low,'],[30.5,34.8,'and flags any payout that doesn’t match.'],[36,40.4,'SeatSync. One count. Every website.']];
+function captions(t){
+  for(const [a,b,c] of CAPS){ if(t>=a&&t<b){
+    const op=Math.min(pr(t,a,a+0.2),1-pr(t,b-0.2,b));
+    const w=c.length*23+90;
+    return `<g opacity="${op}"><rect x="${960-w/2}" y="${1080-120}" width="${w}" height="76" rx="38" fill="${NAVY}" opacity=".92"/>${txt(960,1080-70,c,{size:40,fill:'#fff',weight:600})}</g>`;
+  }}
+  return '';
+}
+function transitions(t){
+  let s='';
+  for(const b of [5,15,35]){
+    const d=t-b;
+    if(d>-0.28&&d<0.28){const k=(d+0.28)/0.56;const x=lerp(W,-W*1.2,eio(k));s+=`<g transform="translate(${x} 0) skewX(-12)"><rect x="0" y="0" width="${W*1.2}" height="${H}" fill="${NAVY}"/><rect x="-60" y="0" width="40" height="${H}" fill="${POLO}"/></g>`;}
+  }
+  return s;
+}
+
+function frame(t){
+  let s;
+  if(t<5) s=scene1(t); else if(t<15) s=scene2(t-5); else if(t<35) s=scene3(t-15); else s=scene4(t-35);
+  return s+captions(t)+transitions(t);
+}
+function seek(t){document.getElementById('stage').innerHTML=frame(t);}
+window.seek=seek;
+const qt=new URLSearchParams(location.search).get('t');
+if(qt!==null) seek(parseFloat(qt));
+else { // live preview: play 0-45s on loop, scaled to fit the window
+  const st=document.getElementById('stage');
+  const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);st.style.transformOrigin='0 0';st.style.transform=`translate(${(innerWidth-1920*k)/2}px,${(innerHeight-1080*k)/2}px) scale(${k})`;};
+  document.body.style.background='#111'; fit(); addEventListener('resize',fit);
+  const t0=performance.now(); const tick=now=>{seek(((now-t0)/1000)%45);requestAnimationFrame(tick);}; requestAnimationFrame(tick);
+}
+</script>
+</body></html>

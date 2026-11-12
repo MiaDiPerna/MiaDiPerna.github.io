@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SeatSync Ad</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face { font-family: 'Inter'; src: url('fonts/inter-latin.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+:root { --navy: #1B2A4A; --white: #FFFFFF; --paper: #F6F4EF; --n15: rgba(27,42,74,.15); --n30: rgba(27,42,74,.3); --n55: rgba(27,42,74,.55); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #000; height: 100%; }
+body { display: flex; align-items: center; justify-content: center; overflow: hidden; font-family: 'Inter', sans-serif; color: var(--navy); }
+#stage { position: relative; width: 1080px; height: 1080px; background: var(--paper); overflow: hidden; transform-origin: center; font-variant-numeric: tabular-nums; }
+.abs { position: absolute; left: 0; top: 0; }
+.mask { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .02em .1em; }
+.mask > span { display: inline-block; will-change: transform; }
+
+/* world layers (scene 1 & 2) */
+.world { position: absolute; left: 0; top: 0; width: 1080px; height: 1080px; transform-origin: 0 0; }
+.phone { position: absolute; width: 180px; height: 360px; border: 8px solid var(--navy); border-radius: 30px; background: var(--white); overflow: hidden; }
+.phone .notch { position: absolute; left: 50%; top: 8px; width: 46px; height: 8px; margin-left: -23px; border-radius: 4px; background: var(--navy); }
+.phone .site { position: absolute; left: 0; right: 0; top: 26px; height: 44px; display: flex; align-items: center; padding: 0 14px; font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+.site.s-fill { background: var(--navy); color: var(--white); }
+.site.s-line { border-bottom: 3px solid var(--navy); }
+.site.s-box > b { border: 3px solid var(--navy); border-radius: 8px; padding: 2px 8px; }
+.phone .bar { position: absolute; left: 14px; height: 12px; border-radius: 6px; background: var(--n15); }
+.phone .q { position: absolute; left: 14px; right: 14px; bottom: 26px; font-weight: 800; font-size: 26px; }
+.phone .q small { display: block; font-size: 13px; font-weight: 600; color: var(--n55); }
+.buzz { position: absolute; width: 4px; height: 26px; border-radius: 2px; background: var(--navy); transform-origin: center; }
+.note { position: absolute; width: 48px; height: 48px; background: var(--white); border: 2px solid var(--navy); font-size: 9px; font-weight: 700; padding: 5px; line-height: 1.25; }
+
+/* device: laptop screen -> phone -> white card */
+#device { position: absolute; left: 0; top: 0; border: 0 solid var(--navy); background: var(--white); overflow: hidden; transform-origin: 50% 100%; }
+#devInner { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.layer { position: absolute; left: 0; top: 0; overflow: hidden; }
+
+/* site page on laptop */
+#pgSite { width: 808px; height: 508px; background: var(--white); }
+#pgSite .top { height: 72px; background: var(--navy); color: var(--white); font-weight: 800; font-size: 36px; display: flex; align-items: center; padding: 0 32px; letter-spacing: -.02em; }
+#pgSite .bar { position: absolute; left: 32px; height: 22px; border-radius: 11px; background: var(--n15); }
+#pgSite .q { position: absolute; left: 32px; bottom: 40px; font-weight: 800; font-size: 54px; }
+#pgSite .q small { display: block; font-size: 22px; font-weight: 600; color: var(--n55); }
+
+/* spreadsheet */
+#pgSheet { width: 808px; height: 508px; background: var(--white); }
+#pgSheet .file { height: 40px; display: flex; align-items: center; padding: 0 16px; font-size: 17px; font-weight: 600; border-bottom: 2px solid var(--navy); }
+#pgSheet .file i { font-style: normal; color: var(--n55); margin-left: auto; font-weight: 500; }
+.grid { position: absolute; left: 0; top: 40px; }
+.cell { position: absolute; height: 46px; border-right: 1px solid var(--n30); border-bottom: 1px solid var(--n30); font-size: 21px; font-weight: 500; display: flex; align-items: center; padding: 0 12px; white-space: nowrap; }
+.cell.h { font-weight: 800; background: var(--n15); }
+.caret { display: inline-block; width: 2px; height: 24px; background: var(--navy); margin-left: 2px; }
+#activeCell { position: absolute; border: 3px solid var(--navy); pointer-events: none; }
+
+/* app */
+#app { width: 352px; height: 772px; background: var(--white); }
+.status { position: absolute; left: 22px; top: 12px; font-size: 14px; font-weight: 700; }
+.apphead { position: absolute; left: 20px; top: 44px; display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+.pane { position: absolute; left: 0; top: 100px; width: 352px; height: 600px; }
+.lbl { position: absolute; left: 20px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--n55); }
+.gcard { position: absolute; left: 20px; width: 312px; height: 128px; border: 2px solid var(--navy); border-radius: 16px; padding: 14px 16px; background: var(--white); }
+.gcard .t { font-size: 19px; font-weight: 800; letter-spacing: -.01em; }
+.gcard .d { font-size: 13px; font-weight: 500; color: var(--n55); margin-top: 2px; }
+.gcard .stats { display: flex; gap: 28px; margin-top: 10px; }
+.stat small { display: block; font-size: 12px; font-weight: 600; color: var(--n55); }
+.stat b { font-size: 22px; font-weight: 800; }
+.track { position: absolute; left: 16px; right: 16px; bottom: 12px; height: 6px; border-radius: 3px; background: var(--n15); overflow: hidden; }
+.track > div { height: 100%; background: var(--navy); border-radius: 3px; }
+.back { position: absolute; left: 20px; top: 8px; font-size: 16px; font-weight: 700; padding: 6px 10px 6px 0; }
+.big { position: absolute; left: 20px; display: flex; gap: 34px; }
+.big .stat b { font-size: 34px; }
+.srow { position: absolute; left: 20px; width: 312px; height: 54px; border-bottom: 1px solid var(--n30); display: flex; align-items: center; justify-content: space-between; font-size: 18px; font-weight: 700; }
+.srow span { font-weight: 800; }
+.tabs { position: absolute; left: 0; top: 700px; width: 352px; height: 72px; border-top: 2px solid var(--navy); display: flex; }
+.tab { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: var(--n55); position: relative; }
+.tab.on { color: var(--navy); font-weight: 800; }
+.tab .ul { position: absolute; left: 30%; right: 30%; top: -2px; height: 4px; background: var(--navy); }
+.prow { position: absolute; left: 20px; width: 312px; height: 84px; border: 2px solid var(--navy); border-radius: 16px; padding: 12px 14px; background: var(--white); overflow: hidden; }
+.prow .n { font-size: 18px; font-weight: 800; }
+.prow .m { font-size: 13px; font-weight: 600; color: var(--n55); margin-top: 4px; }
+.pill { position: absolute; right: 12px; top: 14px; font-size: 13px; font-weight: 800; padding: 5px 10px; border-radius: 999px; border: 2px solid var(--navy); }
+.pill.flag { background: var(--navy); color: var(--white); }
+.detail { position: absolute; left: 14px; right: 14px; top: 84px; }
+.detail div { display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; height: 30px; align-items: center; border-top: 1px solid var(--n30); }
+.detail div.d { font-weight: 800; font-size: 17px; }
+#banner { position: absolute; left: 14px; top: 0; width: 324px; height: 86px; border: 2px solid var(--navy); border-radius: 18px; background: var(--white); display: flex; align-items: center; gap: 12px; padding: 0 14px; }
+#banner small { display: block; font-size: 12px; font-weight: 700; color: var(--n55); }
+#banner b { display: block; font-size: 19px; font-weight: 800; }
+#banner i { display: block; font-size: 13px; font-style: normal; font-weight: 600; }
+
+/* overlay pieces */
+#cardsClip { position: absolute; left: 490px; top: 0; width: 590px; height: 1080px; overflow: hidden; }
+.scard { position: absolute; border: 3px solid var(--navy); border-radius: 18px; background: var(--white); overflow: hidden; }
+.scard .nm { position: absolute; left: 22px; top: 13px; font-size: 26px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+.seat { position: absolute; top: 72px; width: 30px; height: 30px; border-radius: 6px; border: 2px solid var(--n30); }
+.seat.key { border: 3px solid var(--navy); }
+.text { position: absolute; left: 0; width: 1080px; text-align: center; font-weight: 800; letter-spacing: -.03em; white-space: nowrap; }
+#bubble { position: absolute; left: 330px; top: 36px; width: 600px; height: 132px; border: 4px solid var(--navy); border-radius: 30px; background: var(--white); display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 800; letter-spacing: -.02em; transform-origin: 92% 120%; }
+#bubble::after { content: ''; position: absolute; right: 60px; bottom: -26px; width: 40px; height: 40px; background: var(--white); border-right: 4px solid var(--navy); border-bottom: 4px solid var(--navy); transform: skewX(-30deg) rotate(45deg); }
+#door { position: absolute; top: 0; width: 170px; height: 1080px; background: var(--navy); }
+#door::after { content: ''; position: absolute; left: 22px; top: 560px; width: 22px; height: 22px; border-radius: 50%; background: var(--white); }
+#drawer { position: absolute; left: 70px; width: 450px; }
+#drawer .open { position: absolute; left: 14px; right: 14px; top: 0; background: var(--navy); border-radius: 6px 6px 0 0; }
+#drawer .front { position: absolute; left: 0; right: 0; height: 230px; border: 6px solid var(--navy); border-radius: 14px; background: var(--white); display: flex; align-items: center; justify-content: center; }
+#drawer .plate { background: var(--navy); color: var(--white); font-weight: 800; font-size: 44px; padding: 10px 30px; border-radius: 10px; letter-spacing: -.01em; }
+#retClip { position: absolute; left: 70px; top: 0; width: 450px; overflow: hidden; }
+#cursor { position: absolute; left: 0; top: 0; width: 34px; height: 46px; transform-origin: 4px 4px; }
+#logo { position: absolute; left: 430px; top: 250px; width: 220px; height: 220px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- WORLD BACK: desk, laptop base, sticky notes -->
+  <div class="world" id="worldBack">
+    <svg class="abs" width="1080" height="1080" viewBox="0 0 1080 1080">
+      <path d="M318 690 L762 690 L800 724 L280 724 Z" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M470 707 L610 707" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <div class="note" style="left:296px;top:742px;transform:rotate(-8deg)">3,410?</div>
+    <div class="note" style="left:368px;top:756px;transform:rotate(5deg)">call GoTix</div>
+    <div class="note" style="left:604px;top:748px;transform:rotate(-4deg)">2,950 or 2,590</div>
+    <div class="note" style="left:676px;top:738px;transform:rotate(9deg)">C7 ???</div>
+    <div class="note" style="left:738px;top:770px;transform:rotate(-12deg)">payout?!</div>
+    <div class="note" style="left:470px;top:790px;transform:rotate(3deg)">FanRow login</div>
+  </div>
+
+  <!-- DEVICE -->
+  <div id="device"><div id="devInner">
+    <div class="layer" id="pgSite">
+      <div class="top">FanRow</div>
+      <div class="bar" style="top:110px;width:420px"></div>
+      <div class="bar" style="top:150px;width:520px"></div>
+      <div class="bar" style="top:190px;width:360px"></div>
+      <div class="bar" style="top:230px;width:470px"></div>
+      <div class="q"><small>Tickets sold</small>???</div>
+    </div>
+    <div class="layer" id="pgSheet">
+      <div class="file">tickets_FINAL_final_v7<i>autosave off</i></div>
+      <div class="grid" id="grid"></div>
+      <div id="activeCell"></div>
+    </div>
+    <div class="layer" id="app">
+      <div class="status">9:41</div>
+      <div class="apphead"><svg width="32" height="32" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#1B2A4A"/><g stroke="#FFF" stroke-width="8" stroke-linecap="round" fill="none"><path d="M22 30 C40 30 44 50 58 50"/><path d="M22 50 L58 50"/><path d="M22 70 C40 70 44 50 58 50"/><path d="M58 50 L78 50"/></g></svg>SeatSync</div>
+      <div class="pane" id="paneHome">
+        <div class="lbl" style="top:8px">Games</div>
+        <div class="gcard" id="g1" style="top:36px"><div class="t">vs. Harbor Hawks</div><div class="d">Sat, Nov 14</div><div class="stats"><div class="stat"><small>Sold</small><b id="g1s"></b></div><div class="stat"><small>Seats left</small><b id="g1l"></b></div></div><div class="track"><div id="g1b"></div></div></div>
+        <div class="gcard" id="g2" style="top:180px"><div class="t">vs. Bay Rockets</div><div class="d">Sun, Nov 22</div><div class="stats"><div class="stat"><small>Sold</small><b id="g2s"></b></div><div class="stat"><small>Seats left</small><b id="g2l"></b></div></div><div class="track"><div id="g2b"></div></div></div>
+        <div class="gcard" id="g3" style="top:324px"><div class="t">vs. Iron Bulls</div><div class="d">Sat, Dec 5</div><div class="stats"><div class="stat"><small>Sold</small><b id="g3s"></b></div><div class="stat"><small>Seats left</small><b id="g3l"></b></div></div><div class="track"><div id="g3b"></div></div></div>
+      </div>
+      <div class="pane" id="paneGame">
+        <div class="back" id="backBtn">&lsaquo; Home</div>
+        <div style="position:absolute;left:20px;top:48px;font-size:24px;font-weight:800;letter-spacing:-.02em">vs. Harbor Hawks</div>
+        <div class="big" style="top:94px"><div class="stat"><small>Sold</small><b id="gmS"></b></div><div class="stat"><small>Seats left</small><b id="gmL"></b></div></div>
+        <div class="lbl" style="top:178px">By website</div>
+        <div class="srow" style="top:200px">TixHub<span id="sr0"></span></div>
+        <div class="srow" style="top:254px">SeatDash<span id="sr1"></span></div>
+        <div class="srow" style="top:308px">GoTix<span id="sr2"></span></div>
+        <div class="srow" style="top:362px">FanRow<span id="sr3"></span></div>
+      </div>
+      <div class="pane" id="panePay">
+        <div style="position:absolute;left:20px;top:4px;font-size:24px;font-weight:800;letter-spacing:-.02em">Payouts</div>
+        <div class="prow" id="p0"><div class="n">TixHub</div><div class="m">Sold $96,400 · Paid $96,400</div><div class="pill" id="pp0">Matches</div></div>
+        <div class="prow" id="p1"><div class="n">GoTix</div><div class="m">Sold $52,300 · Paid $52,300</div><div class="pill" id="pp1">Matches</div></div>
+        <div class="prow" id="p2"><div class="n">SeatDash</div><div class="m">Sold $88,150 · Paid $84,900</div><div class="pill flag" id="pp2">Flagged</div>
+          <div class="detail"><div><span>Sold</span><span>$88,150</span></div><div><span>Paid</span><span>$84,900</span></div><div class="d"><span>Difference</span><span>$3,250</span></div></div></div>
+        <div class="prow" id="p3"><div class="n">FanRow</div><div class="m">Sold $23,600 · Paid $23,600</div><div class="pill" id="pp3">Matches</div></div>
+      </div>
+      <div class="tabs"><div class="tab" id="tHome">Home<div class="ul" id="ulHome"></div></div><div class="tab" id="tPay">Payouts<div class="ul" id="ulPay"></div></div><div class="tab">Invite staff</div></div>
+      <div id="banner"><svg width="38" height="38" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#1B2A4A"/><g stroke="#FFF" stroke-width="8" stroke-linecap="round" fill="none"><path d="M22 30 C40 30 44 50 58 50"/><path d="M22 50 L58 50"/><path d="M22 70 C40 70 44 50 58 50"/><path d="M58 50 L78 50"/></g></svg><div><small>SeatSync</small><b>10% of seats left</b><i>vs. Bay Rockets</i></div></div>
+    </div>
+  </div></div>
+
+  <!-- WORLD FRONT: the phones -->
+  <div class="world" id="worldFront"></div>
+
+  <!-- scene 3 overlay: lines + site cards -->
+  <svg class="abs" id="lines" width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"></svg>
+  <div id="cardsClip"></div>
+
+  <!-- scene 4: drawer -->
+  <div id="retClip"></div>
+  <div id="drawer"><div class="open"></div><div class="front"><div class="plate">Retired</div></div></div>
+
+  <!-- scene 2: door + bubble -->
+  <div id="door"></div>
+  <div id="bubble">We sold the same seats twice.</div>
+
+  <!-- end card -->
+  <svg id="logo" viewBox="0 0 100 100"><rect id="logoSq" x="0" y="0" width="100" height="100" rx="24" fill="#1B2A4A"/>
+    <g stroke="#FFF" stroke-width="7" stroke-linecap="round" fill="none">
+      <path class="lb" pathLength="1" d="M22 30 C40 30 44 50 58 50"/><path class="lb" pathLength="1" d="M22 50 L58 50"/><path class="lb" pathLength="1" d="M22 70 C40 70 44 50 58 50"/><path class="lb" pathLength="1" d="M58 50 L78 50"/>
+    </g></svg>
+
+  <!-- text -->
+  <div class="text" id="tHook" style="top:150px;font-size:60px"></div>
+  <div class="text" id="tFam" style="top:330px;font-size:104px"></div>
+  <div class="text" id="tCap" style="top:58px;font-size:56px;height:90px"></div>
+  <div class="text" id="tWord" style="top:500px;font-size:150px;letter-spacing:-.045em"></div>
+  <div class="text" id="tTag" style="top:700px;font-size:56px;font-weight:700;letter-spacing:-.025em"></div>
+
+  <svg id="cursor" viewBox="0 0 34 46"><path d="M4 4 L4 38 L13 30 L19 43 L25 40 L19 28 L31 28 Z" fill="#1B2A4A" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/></svg>
+</div>
+
+<script>
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const E = {
+  lin: k => k,
+  io: k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2,
+  out: k => 1 - Math.pow(1 - k, 3),
+  out5: k => 1 - Math.pow(1 - k, 5),
+  in: k => k * k * k,
+  in2: k => k * k,
+  sine: k => -(Math.cos(Math.PI * k) - 1) / 2,
+};
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const tw = (t, a, b, v0, v1, e = E.io) => lerp(v0, v1, e(prog(t, a, b)));
+// keyframes: [[time, value, easeIntoThisKey?], ...]
+function kf(t, keys) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) { const [t0, v0] = keys[i - 1], [t1, v1, e] = keys[i]; return lerp(v0, v1, (e || E.io)((t - t0) / (t1 - t0))); }
+  }
+  return keys[keys.length - 1][1];
+}
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const BEAT = 60 / 90, B = n => 15 + n * BEAT;   // music beat grid (song enters on a beat at 15s)
+
+// masked word builder: words slide up from behind a mask
+function buildWords(el, text) {
+  el.innerHTML = text.split(' ').map(w => `<span class="mask"><span>${w}</span></span>`).join(' ');
+  return [...el.querySelectorAll('.mask>span')];
+}
+// in: word i enters at tin + i*stagger; out: all leave upward at tout
+function words(spans, t, tin, tout, stagger = .07, dIn = .5, dOut = .35) {
+  spans.forEach((s, i) => {
+    const a = tin + i * stagger;
+    let y = 110 * (1 - E.out5(prog(t, a, a + dIn)));
+    if (tout != null) y -= 110 * E.in(prog(t, tout + i * .03, tout + i * .03 + dOut));
+    s.style.transform = `translateY(${y}%)`;
+  });
+}
+
+// ---------- build static pieces ----------
+const SITES = ['TixHub', 'SeatDash', 'GoTix', 'FanRow'];
+function phoneHTML(name, style, bars) {
+  return `<div class="notch"></div><div class="site ${style}">${style === 's-box' ? `<b>${name}</b>` : name}</div>` +
+    bars.map((w, i) => `<div class="bar" style="top:${92 + i * 26}px;width:${w}px"></div>`).join('') +
+    `<div class="q"><small>Tickets sold</small>???</div>`;
+}
+const PH = [
+  { name: 'TixHub', style: 's-fill', bars: [120, 90, 136, 70], cx: 180, cy: 560, r: -10 },
+  { name: 'SeatDash', style: 's-line', bars: [100, 140, 80, 120], cx: 902, cy: 540, r: 8 },
+  { name: 'GoTix', style: 's-box', bars: [134, 76, 110, 96], cx: 400, cy: 862, r: -5 },
+];
+const wf = $('worldFront');
+PH.forEach((p, i) => {
+  const d = document.createElement('div'); d.className = 'phone'; d.id = 'ph' + i; d.innerHTML = phoneHTML(p.name, p.style, p.bars); wf.appendChild(d);
+  for (let k = 0; k < 4; k++) { const b = document.createElement('div'); b.className = 'buzz'; b.id = `bz${i}_${k}`; wf.appendChild(b); }
+});
+// retired copies for the drawer
+const rc = $('retClip');
+PH.forEach((p, i) => { const d = document.createElement('div'); d.className = 'phone'; d.id = 'rp' + i; d.innerHTML = phoneHTML(p.name, p.style, p.bars); rc.appendChild(d); });
+
+// spreadsheet
+const COLS = [['Site', 170], ['Game', 190], ['Seat', 200], ['Sold', 248]];
+const ROWS = [
+  ['TixHub', 'Hawks', '104-C-7', '3,410'], ['SeatDash', 'Hawks', '212-A-3', '2,950'], ['GoTix', 'Hawks', '104-C-7', '1,880'],
+  ['FanRow', 'Hawks', '118-F-12', '880'], ['TixHub', 'Rockets', '220-B-1', '3,600'], ['SeatDash', 'Rockets', '104-C-8', '3,120'],
+  ['GoTix', 'Rockets', '310-D-4', '2,410'], ['FanRow', 'Rockets', '115-A-9', '1,510'],
+];
+const grid = $('grid'); const RH = 46, colX = [0]; COLS.forEach(c => colX.push(colX[colX.length - 1] + c[1]));
+COLS.forEach((c, j) => grid.insertAdjacentHTML('beforeend', `<div class="cell h" style="left:${colX[j]}px;top:0;width:${c[1]}px">${c[0]}</div>`));
+ROWS.forEach((r, i) => r.forEach((v, j) => grid.insertAdjacentHTML('beforeend',
+  `<div class="cell" id="c${i}_${j}" style="left:${colX[j]}px;top:${(i + 1) * RH}px;width:${COLS[j][1]}px">${j === 3 ? '' : v}</div>`)));
+
+// site cards + lines (scene 3)
+const CARD_CY = [365, 519, 673, 827];
+const cc = $('cardsClip'), lines = $('lines');
+SITES.forEach((s, i) => {
+  cc.insertAdjacentHTML('beforeend', `<div class="scard" id="sc${i}"><div class="nm">${s}</div>` +
+    [...Array(8)].map((_, k) => `<div class="seat${k === 5 ? ' key' : ''}" id="st${i}_${k}" style="left:${22 + k * 40}px"></div>`).join('') + `</div>`);
+  lines.insertAdjacentHTML('beforeend', `<path id="ln${i}" pathLength="1" d="M490 ${560 + i * 20} C 545 ${560 + i * 20}, 545 ${CARD_CY[i]}, 600 ${CARD_CY[i]}"/>`);
+});
+
+const hook = buildWords($('tHook'), 'How many tickets did we sell?');
+const fam = buildWords($('tFam'), 'Sound familiar?');
+const CAPS = ['Every website. One live count.', 'Sold here. Gone everywhere.', '10% of seats left', "Payout doesn't match? Flagged."];
+const capEl = $('tCap');
+capEl.innerHTML = CAPS.map((c, i) => `<div id="cap${i}" style="position:absolute;left:0;width:1080px;top:0">${c.split(' ').map(w => `<span class="mask"><span>${w}</span></span>`).join(' ')}</div>`).join('');
+const capWords = CAPS.map((_, i) => [...$('cap' + i).querySelectorAll('.mask>span')]);
+const wordm = buildWords($('tWord'), 'SeatSync');
+const tag = buildWords($('tTag'), 'One count. Every website.');
+
+// ---------- fit text (only after fonts load) ----------
+function fit(el, maxW) {
+  el.style.transform = 'none';
+  const inner = el.firstElementChild ? el : el;
+  // measure natural width of the content
+  const r = document.createRange(); r.selectNodeContents(el); const w = r.getBoundingClientRect().width;
+  const s = Math.min(1, maxW / w);
+  el.style.transform = `scale(${s})`; el.style.transformOrigin = '50% 50%';
+}
+
+// ---------- seek ----------
+const set = (el, css) => { const s = el.style; for (const k in css) s[k] = css[k]; };
+const show = (el, on) => { el.style.visibility = on ? 'visible' : 'hidden'; };
+
+function seek(t) {
+  // ===== camera on the world (scene 1 -> 2 -> drop away in 3) =====
+  const z = tw(t, 5.0, 5.8, 0, 1, E.io);
+  const s = lerp(1, 2, z), Tx = lerp(0, -540, z);
+  let Ty = lerp(0, -640, z);
+  Ty += 1150 * E.in(prog(t, 15.0, 15.8));
+  const worldT = `translate(${Tx}px,${Ty}px) scale(${s})`;
+  set($('worldBack'), { transform: worldT, visibility: t < 16 ? 'visible' : 'hidden' });
+  set($('worldFront'), { transform: worldT, visibility: t < 16 ? 'visible' : 'hidden' });
+
+  // ===== scene 1: buzzing phones =====
+  const pulses = [0.15, 0.85, 1.55, 2.25, 2.95, 3.65];
+  PH.forEach((p, i) => {
+    let env = 0; pulses.forEach(a => { const k = (t - a - i * .04) / .45; if (k >= 0 && k <= 1) env = Math.max(env, Math.sin(Math.PI * k)); });
+    const jx = Math.sin(t * 2 * Math.PI * 22 + i) * 5 * env, jr = Math.sin(t * 2 * Math.PI * 19 + i * 2) * 1.4 * env;
+    let x = p.cx - 90 + jx + (i === 0 ? -160 : i === 1 ? 160 : 0) * z, y = p.cy - 180, r = p.r + jr;
+    if (i === 2) { // the slip: creeps, then falls with gravity
+      const c = prog(t, 4.0, 4.3); y += 18 * E.in2(c); r += 6 * E.in2(c);
+      const f = Math.max(0, t - 4.3); y += 0.5 * 2600 * f * f; r += 70 * f; x += 120 * f;
+    }
+    set($('ph' + i), { transform: `translate(${x}px,${y}px) rotate(${r}deg)` });
+    for (let k = 0; k < 4; k++) {
+      const side = k < 2 ? -1 : 1, row = k % 2;
+      const bx = p.cx + side * (112 + 10 * env) - 2, by = p.cy - 60 + row * 70;
+      set($(`bz${i}_${k}`), { transform: `translate(${bx}px,${by}px) rotate(${p.r + side * 12}deg) scaleY(${env})`, visibility: (env > .02 && !(i === 2 && t > 4.0)) ? 'visible' : 'hidden' });
+    }
+  });
+  words(hook, t, 0.45, 4.85, .08);
+  show($('tHook'), t < 5.6);
+
+  // ===== device rect =====
+  // scene 1/2: laptop screen in world coords (330,420,420,270), bezel 8 -> mapped through camera
+  let dx, dy, dw, dh, db, dr, rotX = 0, rot = 0, sc = 1;
+  const W = { x: 330, y: 420, w: 420, h: 270, b: 8, r: 8 };
+  const L = { x: W.x * s + Tx, y: W.y * s + Ty, w: W.w * s, h: W.h * s, b: W.b * s, r: W.r * s };
+  // head on desk: screen slowly tips forward
+  const tip = 78 * E.sine(prog(t, 10.6, 12.6));
+  if (t < 15) { ({ x: dx, y: dy, w: dw, h: dh, b: db, r: dr } = L); rotX = tip; }
+  else {
+    // scene 3: slab stands back up as the phone; later recentres; scene 4 leans back, then becomes the white card
+    const m = E.out(prog(t, 15.0, 15.9));
+    const S2 = { x: 120, y: 200, w: 840, h: 540, b: 16, r: 16 };
+    const px = kf(t, [[15.9, 110], [23.0, 110], [23.6, 350], [35.0, 350], [36.4, 610, E.io], [37.67, 610], [38.67, 0, E.io]]);
+    const py = kf(t, [[35.0, 190], [36.4, 220, E.io], [37.67, 220], [38.67, 0, E.io]]);
+    const pw = kf(t, [[37.67, 380], [38.67, 1080, E.io]]), ph = kf(t, [[37.67, 800], [38.67, 1080, E.io]]);
+    const pb = kf(t, [[37.67, 14], [38.67, 0, E.io]]), pr = kf(t, [[37.67, 52], [38.67, 0, E.io]]);
+    dx = lerp(S2.x, px, m); dy = lerp(S2.y, py, m); dw = lerp(S2.w, pw, m); dh = lerp(S2.h, ph, m); db = lerp(S2.b, pb, m); dr = lerp(S2.r, pr, m);
+    rotX = 78 * (1 - m);
+    rot = kf(t, [[35.0, 0], [36.4, -7, E.io], [37.67, -7], [38.67, 0, E.io]]);
+  }
+  set($('device'), {
+    width: dw + 'px', height: dh + 'px', borderWidth: db + 'px', borderRadius: dr + 'px',
+    transform: `translate(${dx}px,${dy}px) perspective(1500px) rotateX(${rotX}deg) rotate(${rot}deg)`,
+  });
+  const innerW = dw - 2 * db;
+  // content layers
+  const inSheet = t >= 5.0 && t < 15, inApp = t >= 15;
+  show($('pgSite'), t < 5.7); show($('pgSheet'), inSheet); show($('app'), inApp);
+  if (!inApp) $('devInner').style.transform = `scale(${innerW / 808})`;
+  else $('devInner').style.transform = `scale(${Math.max(innerW / 352, (dh - 2 * db) / 772 * (t > 37 ? 1 : 0))})`;
+  // sheet wipes down over the site page
+  $('pgSheet').style.clipPath = `inset(0 0 ${100 * (1 - E.io(prog(t, 5.0, 5.6)))}% 0)`;
+
+  // ===== scene 2: typing into the sheet =====
+  const tStart = 5.75, per = 0.38, tStop = 8.8;
+  for (let i = 0; i < ROWS.length; i++) {
+    const v = ROWS[i][3], a = tStart + i * per;
+    const n = clamp(Math.floor((Math.min(t, tStop) - a) / (per * .8 / v.length)) + 1, 0, v.length);
+    const typing = t >= a && t < a + per && t < tStop;
+    const cell = $(`c${i}_3`);
+    const txt = t < a ? '' : v.slice(0, n);
+    const showCaret = (i === Math.min(ROWS.length - 1, Math.floor((t - tStart) / per))) && t >= tStart && (t < tStop || Math.floor(t * 2.4) % 2 === 0);
+    cell.innerHTML = txt + (showCaret ? '<span class="caret"></span>' : '');
+  }
+  const ar = clamp(Math.floor((Math.min(t, tStop - .01) - tStart) / per), 0, ROWS.length - 1);
+  set($('activeCell'), { left: colX[3] - 1 + 'px', top: 40 + (ar + 1) * RH - 1 + 'px', width: COLS[3][1] + 2 + 'px', height: RH + 2 + 'px', visibility: t >= 5.6 ? 'visible' : 'hidden' });
+  [0, 2].forEach((r, k) => { const c = $(`c${r}_2`); const on = t >= 9.9 + k * .2; c.style.background = on ? '#1B2A4A' : ''; c.style.color = on ? '#FFFFFF' : ''; c.style.fontWeight = on ? 800 : 500; });
+
+  // coworker in the doorway
+  const doorX = kf(t, [[8.95, 1090], [9.35, 925, E.out], [12.0, 925], [12.5, 1090, E.in]]);
+  set($('door'), { transform: `translateX(${doorX}px)`, visibility: (t > 8.9 && t < 12.6) ? 'visible' : 'hidden' });
+  const bs = kf(t, [[9.2, 0], [9.5, 1, E.out], [11.9, 1], [12.15, 0, E.in]]);
+  set($('bubble'), { transform: `scale(${bs})`, visibility: bs > .001 ? 'visible' : 'hidden' });
+  words(fam, t, 12.6, 15.0, .12, .6, .4);
+  show($('tFam'), t > 12.5 && t < 15.6);
+
+  // ===== scene 3: the app =====
+  const sold1 = 9114 + Math.min(6, Math.floor(Math.max(0, t - 15.5) / BEAT)) + (t >= B(9) ? 1 : 0);
+  let sold2 = 10632 + Math.min(8, Math.floor(Math.max(0, t - 15.5) / BEAT));
+  sold2 = Math.round(lerp(sold2, 10800, E.io(prog(t, 23.6, B(14) - .05))));
+  const sold3 = 6405 + Math.min(5, Math.floor(Math.max(0, t - 15.8) / BEAT));
+  [[sold1, 1], [sold2, 2], [sold3, 3]].forEach(([v, i]) => { $(`g${i}s`).textContent = fmt(v); $(`g${i}l`).textContent = fmt(12000 - v); $(`g${i}b`).style.width = (v / 120) + '%'; });
+  $('gmS').textContent = fmt(sold1); $('gmL').textContent = fmt(12000 - sold1);
+  [3410 + (t >= B(9) ? 1 : 0), 2950, 1880, 880].forEach((v, i) => $('sr' + i).textContent = fmt(v));
+
+  // panes: home -> game (click B7) -> home (click B11) -> payouts (click B17)
+  const toGame = E.io(prog(t, B(7) + .08, B(7) + .5)), toHome = E.io(prog(t, B(11) + .08, B(11) + .5)), toPay = E.io(prog(t, B(17) + .08, B(17) + .5));
+  const homeX = t < B(11) ? -352 * toGame : -352 * toPay;
+  set($('paneHome'), { transform: `translateX(${homeX}px)` });
+  set($('paneGame'), { transform: `translateX(${t < B(11) ? 352 * (1 - toGame) : 352 * toHome}px)` });
+  set($('panePay'), { transform: `translateX(${352 * (1 - toPay)}px)` });
+  const payOn = t >= B(17) + .08;
+  $('tHome').className = 'tab' + (payOn ? '' : ' on'); $('tPay').className = 'tab' + (payOn ? ' on' : '');
+  show($('ulHome'), !payOn); show($('ulPay'), payOn);
+  // click feedback on tapped targets
+  const press = (a) => (t >= a && t < a + .22);
+  $('g1').style.background = press(B(7)) ? 'rgba(27,42,74,.15)' : '#FFFFFF';
+  $('backBtn').style.background = press(B(11)) ? 'rgba(27,42,74,.15)' : 'transparent';
+  $('tPay').style.background = press(B(17)) ? 'rgba(27,42,74,.15)' : 'transparent';
+  // payouts: rows, stamps, flagged detail (click B22)
+  const open = 130 * E.io(prog(t, B(22) + .06, B(22) + .5));
+  const rowY = [48, 144, 240, 336 + open];
+  rowY.forEach((y, i) => { set($('p' + i), { top: y + 'px', height: (i === 2 ? 84 + open : 84) + 'px', background: (i === 2 && press(B(22))) ? 'rgba(27,42,74,.15)' : '#FFFFFF' }); });
+  [B(18), B(18.5), B(19), B(19.5)].forEach((a, i) => { const k = E.out5(prog(t, a, a + .25)); set($('pp' + i), { transform: `scale(${k})`, visibility: k > .01 ? 'visible' : 'hidden' }); });
+  // notification banner at B14
+  const by = kf(t, [[B(14) - .35, -100], [B(14), 14, E.out], [B(17) - .6, 14], [B(17) - .25, -100, E.in]]);
+  set($('banner'), { transform: `translateY(${by}px)` });
+  // app content slides up out of the way when the phone becomes the white card
+  const appUp = -800 * E.in(prog(t, 37.67, 38.2));
+  ['paneHome', 'paneGame', 'panePay'].forEach(id => $(id).style.top = (100 + appUp) + 'px');
+  document.querySelector('#app .tabs').style.top = (700 + appUp) + 'px';
+  document.querySelector('#app .apphead').style.top = (44 + appUp) + 'px';
+  document.querySelector('#app .status').style.top = (12 + appUp) + 'px';
+
+  // site labels emerge from the phone, lines connect, then grow into cards
+  SITES.forEach((sn, i) => {
+    const a = 15.95 + i * .12;
+    let x = kf(t, [[a, -300], [a + .6, 110, E.out]]);
+    x -= 560 * E.in(prog(t, 22.4 + i * .05, 22.9 + i * .05));
+    const grow = E.io(prog(t, B(7) + .25 + i * .06, B(7) + .75 + i * .06));
+    const w = lerp(196, 380, grow), h = lerp(64, 130, grow);
+    set($('sc' + i), { transform: `translate(${x}px,${CARD_CY[i] - h / 2}px)`, width: w + 'px', height: h + 'px', visibility: (t > a && t < 23.2) ? 'visible' : 'hidden' });
+    const ln = $('ln' + i);
+    const d0 = 1 - E.io(prog(t, 16.45 + i * .1, 17.2 + i * .1)), d1 = E.io(prog(t, 19.0, 19.45));
+    set(ln, { strokeDasharray: '1 1', strokeDashoffset: (d0 - d1) + '', visibility: (t > 16.4 && t < 19.5) ? 'visible' : 'hidden' });
+    // the seat: sells on TixHub, vanishes from the rest
+    const key = $(`st${i}_5`);
+    if (i === 0) { const k = t >= B(9); set(key, { background: k ? '#1B2A4A' : 'transparent', transform: `scale(${k ? 1 : 1})` }); }
+    else { const k = E.in(prog(t, B(9) + .1 + i * .1, B(9) + .3 + i * .1)); set(key, { transform: `scale(${1 - k})` }); }
+  });
+
+  // captions
+  capWords.forEach((ws, i) => {
+    const ins = [16.0, B(8), B(14), B(19)][i], outs = [B(8) - .4, 23.6, B(19) - .4, 35.0][i];
+    words(ws, t, ins, outs, .07);
+  });
+  show(capEl, t > 15.9 && t < 35.6);
+
+  // ===== scene 4: drawer of retired phones =====
+  const dTop = kf(t, [[35.0, 1120], [35.8, 740, E.out], [37.67, 740], [38.3, 1160, E.in]]);
+  const openH = kf(t, [[36.9, 44], [37.4, 8, E.io]]);
+  set($('drawer'), { transform: `translateY(${dTop}px)`, visibility: (t > 35 && t < 38.4) ? 'visible' : 'hidden' });
+  set(document.querySelector('#drawer .open'), { height: openH + 'px', top: 0 + 'px' });
+  set(document.querySelector('#drawer .front'), { top: openH + 'px' });
+  set($('retClip'), { height: (dTop + openH * .9) + 'px', visibility: (t > 35 && t < 38.4) ? 'visible' : 'hidden' });
+  PH.forEach((p, i) => {
+    const a = B(31) + i * BEAT * .5; // phones drop on the beat after the scene change
+    const f = Math.max(0, t - a);
+    const restY = dTop - 160 + i * 12;
+    let y = Math.min(-420 + 0.5 * 4200 * f * f, restY);
+    y += 260 * E.in(prog(t, 36.9, 37.4));
+    const x = 40 + i * 120;
+    set($('rp' + i), { transform: `translate(${x}px,${y}px) rotate(${[-6, 4, -2][i]}deg) scale(.82)`, visibility: t > a ? 'visible' : 'hidden' });
+  });
+
+  // ===== end card =====
+  const lg = E.out(prog(t, B(36) - .3, B(36) + .25));
+  set($('logo'), { transform: `scale(${lg})`, visibility: lg > .001 ? 'visible' : 'hidden' });
+  document.querySelectorAll('.lb').forEach((p, i) => { p.style.strokeDasharray = '1 1'; p.style.strokeDashoffset = (1 - E.io(prog(t, B(36) + .05 + i * .08, B(36) + .45 + i * .08))) + ''; });
+  words(wordm, t, B(37) - .1, null, 0, .6);
+  show($('tWord'), t > 39);
+  // tagline lands word-pair by word-pair, last word on the song's final hit
+  [[0, 1, B(38)], [2, 2, B(39)], [3, 3, B(40)]].forEach(([a, b, tt]) => { for (let k = a; k <= b; k++) words([tag[k]], t, tt - .18 + (k - a) * .07, null, 0, .45); });
+  show($('tTag'), t > 40);
+
+  // ===== cursor (drives the app with real clicks) =====
+  const C = [
+    [18.6, 1130, 1120], [19.45, 300, 412, E.io], [B(7) + .3, 300, 412], [B(7) + 1.0, 400, 760, E.io], [B(11) - .9, 400, 760], [B(11) - .25, 168, 318, E.io],
+    [B(11) + .55, 168, 318], [24.0, 690, 640, E.io], [B(17) - .35, 690, 640], [B(17) - .05, 542, 944, E.io],
+    [B(22) - .5, 542, 944], [B(22) - .05, 590, 492, E.io], [32.6, 590, 492], [33.8, 1140, 1160, E.in],
+  ];
+  const cx = kf(t, C.map(c => [c[0], c[1], c[3]])), cy = kf(t, C.map(c => [c[0], c[2], c[3]]));
+  const clicks = [B(7), B(11), B(17), B(22)];
+  let cs = 1; clicks.forEach(a => { if (t >= a - .06 && t < a + .16) cs = .82; });
+  set($('cursor'), { transform: `translate(${cx - 4}px,${cy - 4}px) scale(${cs})`, visibility: (t > 18.5 && t < 34) ? 'visible' : 'hidden' });
+}
+
+window.seek = seek;
+window.DURATION = 45;
+document.fonts.ready.then(async () => {
+  await document.fonts.load('800 20px Inter'); await document.fonts.load('500 20px Inter');
+  // fit text now that metrics are real
+  ['tHook', 'tFam', 'tWord', 'tTag'].forEach(id => fit($(id), 960));
+  CAPS.forEach((_, i) => fit($('cap' + i), 960));
+  seek(0);
+  window.__ready = true;
+  // when opened in a browser (not the renderer), play in real time; click to restart
+  if (!navigator.webdriver) {
+    const scaleStage = () => { const k = Math.min(innerWidth, innerHeight) / 1080; $('stage').style.transform = `scale(${k})`; };
+    scaleStage(); addEventListener('resize', scaleStage);
+    let t0 = performance.now();
+    const loop = now => { const t = ((now - t0) / 1000) % 45; seek(t); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+    addEventListener('click', () => { t0 = performance.now(); });
+  }
+});
+</script>
+</body>
+</html>
