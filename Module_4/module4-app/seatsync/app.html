@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SeatSync App</title>
+<meta name="description" content="A tap-through demo of the SeatSync phone app, using example data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+:root {
+  --navy: #1B2F5B; --ink: #0E1A33; --white: #FFFFFF; --ground: #F6F8FB;
+  --muted: #55627A; --line: #DCE2EC; --flag: #F4A62A; --ok: #E6ECF6;
+  --display: "Space Grotesk", system-ui, sans-serif; --sans: "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; background: #E9EDF3; color: var(--ink); font: 16px/1.45 var(--sans); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 16px }
+button, input { font: inherit; color: inherit }
+button { cursor: pointer }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--flag); outline-offset: 2px }
+
+.demo-note { font-size: 14px; color: var(--muted); text-align: center }
+.demo-note a { color: var(--navy); font-weight: 600 }
+
+/* Phone frame on wide screens; full screen on phones */
+.phone { width: 390px; height: min(844px, calc(100vh - 100px)); min-height: 600px; border-radius: 52px; background: var(--ink); padding: 12px; box-shadow: 0 30px 60px rgba(14, 26, 51, .22) }
+.scr { position: relative; height: 100%; border-radius: 40px; background: var(--ground); overflow: hidden }
+@media (max-width: 480px) {
+  body { padding: 0; gap: 0; justify-content: flex-start; background: var(--ground) }
+  .phone { width: 100%; height: auto; min-height: 0; flex: 1; border-radius: 0; padding: 0; box-shadow: none }
+  .scr { border-radius: 0 }
+  .demo-note { order: 2; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--white); width: 100%; border-top: 1px solid var(--line) }
+}
+
+.screen { position: absolute; inset: 0; display: none; flex-direction: column; overflow-y: auto }
+.screen.on { display: flex }
+.top { background: var(--navy); color: var(--white); padding: 44px 20px 18px; flex: none }
+.top .brand { font: 700 14px/1 var(--display); opacity: .75; margin-bottom: 6px }
+.top h1 { font: 700 30px/1.1 var(--display); margin: 0 }
+.back { background: none; border: 0; color: var(--white); padding: 0; margin: 0 0 10px; font-weight: 600; opacity: .9 }
+.body { padding: 14px 14px 24px; display: flex; flex-direction: column; gap: 10px }
+.hint { color: var(--muted); font-size: 14px; margin: 2px 4px }
+
+.card { display: block; width: 100%; text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px }
+button.card:hover { border-color: #B9C4D6 }
+.g-name { font-weight: 700; font-size: 17px }
+.g-date { font-size: 13px; color: var(--muted) }
+.nums { display: flex; gap: 26px; margin-top: 6px }
+.nums b { display: block; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums }
+.nums span { font-size: 12px; color: var(--muted) }
+.bar { height: 7px; border-radius: 4px; background: #E3E8F1; margin-top: 10px }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--navy) }
+
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px }
+.pill { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--ok); color: var(--navy); white-space: nowrap }
+.pill.flag { background: var(--flag); color: var(--ink) }
+.pill.off { background: transparent; border: 1px solid var(--line); color: var(--muted) }
+.sub { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums }
+.detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-variant-numeric: tabular-nums }
+.detail .diff { font-weight: 700 }
+.detail span:nth-child(even) { text-align: right }
+
+.nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px }
+.btn { background: var(--navy); color: var(--white); border: 0; border-radius: 14px; padding: 14px 16px; font-weight: 600 }
+.btn:hover { background: var(--ink) }
+.btn.ghost { background: var(--white); color: var(--navy); border: 1px solid var(--line) }
+.btn:disabled { opacity: .45; cursor: default }
+
+.split { list-style: none; margin: 0; padding: 0 }
+.split li { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums }
+.split li:first-child { border-top: 0 }
+.label { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 4px 0 }
+
+/* Bottom sheet for website login and staff invite */
+.sheet-bg { position: absolute; inset: 0; background: rgba(14, 26, 51, .4); display: none; align-items: flex-end }
+.sheet-bg.on { display: flex }
+.sheet { width: 100%; background: var(--white); border-radius: 24px 24px 0 0; padding: 22px 18px 28px; display: flex; flex-direction: column; gap: 10px }
+.sheet h2 { font: 700 22px/1.2 var(--display); margin: 0 0 4px; color: var(--navy) }
+.sheet label { font-size: 13px; font-weight: 600; color: var(--muted) }
+.sheet input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--ground) }
+.sheet .nav { margin-top: 8px }
+.err { color: #A34A00; font-size: 13px; min-height: 18px }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="scr">
+
+    <!-- 1. Connect websites (first time only) -->
+    <section class="screen" id="connect" aria-labelledby="t-connect">
+      <div class="top"><div class="brand">SeatSync</div><h1 id="t-connect">Connect websites</h1></div>
+      <div class="body">
+        <p class="hint">Tap a website and log in once to connect it.</p>
+        <div id="site-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button class="btn" id="to-home" style="margin-top:6px" disabled>Continue</button>
+      </div>
+    </section>
+
+    <!-- 2. Home -->
+    <section class="screen" id="home" aria-labelledby="t-home">
+      <div class="top"><div class="brand">SeatSync</div><h1 id="t-home">Home</h1></div>
+      <div class="body">
+        <div id="game-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="nav">
+          <button class="btn" data-go="payouts">Payouts</button>
+          <button class="btn ghost" data-go="invite">Invite staff</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Game -->
+    <section class="screen" id="game" aria-labelledby="t-game">
+      <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-game">Game</h1></div>
+      <div class="body" id="game-body"></div>
+    </section>
+
+    <!-- 4. Payouts -->
+    <section class="screen" id="payouts" aria-labelledby="t-payouts">
+      <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-payouts">Payouts</h1></div>
+      <div class="body">
+        <p class="hint">Tap a flagged website to see the difference.</p>
+        <div id="pay-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </section>
+
+    <!-- 5. Invite staff -->
+    <section class="screen" id="invite" aria-labelledby="t-invite">
+      <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-invite">Invite staff</h1></div>
+      <div class="body">
+        <p class="hint">Staff get their own login and see the same screens you do.</p>
+        <div class="card"><ul class="split" id="staff-list"></ul></div>
+        <button class="btn" id="open-invite">Invite</button>
+      </div>
+    </section>
+
+    <!-- Website login sheet -->
+    <div class="sheet-bg" id="login-sheet">
+      <form class="sheet" id="login-form">
+        <h2 id="login-title">Log in</h2>
+        <label for="lu">Username</label><input id="lu" autocomplete="off">
+        <label for="lp">Password</label><input id="lp" type="password" autocomplete="off">
+        <div class="hint" style="margin:0">Demo only. Nothing you type is saved or sent.</div>
+        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Connect</button></div>
+      </form>
+    </div>
+
+    <!-- Invite sheet -->
+    <div class="sheet-bg" id="invite-sheet">
+      <form class="sheet" id="invite-form" novalidate>
+        <h2>Invite staff</h2>
+        <label for="ie">Staff email</label><input id="ie" type="email" placeholder="name@example.com" autocomplete="off">
+        <div class="err" id="ie-err"></div>
+        <div class="hint" style="margin:0">Demo only. No email is sent.</div>
+        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Invite</button></div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<p class="demo-note">Demo with example data. <a href="./">Back to SeatSync</a></p>
+
+<script>
+// Example data, matching the SeatSync ad. Not real sales.
+const SITES = ['Team website', 'Ticket site', 'Resale site'];
+const GAMES = [
+  { name: 'vs. Harbor City', date: 'Sat, Nov 21', seats: 10000, bySite: [3112, 4086, 1214] },
+  { name: 'vs. Lakeview',    date: 'Sat, Nov 28', seats: 10000, bySite: [2540, 3365, 1000] },
+  { name: 'vs. Northgate',   date: 'Sat, Dec 5',  seats: 10000, bySite: [1610, 2030, 590] },
+];
+const PAYOUTS = [
+  { site: 'Team website', sold: 412600, paid: 412600 },
+  { site: 'Resale site',  sold: 188400, paid: 188400 },
+  { site: 'Ticket site',  sold: 96250,  paid: 91750 },
+];
+const staff = ['ops.assistant@example.com', 'box.office@example.com'];
+const connected = new Set();
+
+const $ = (s) => document.querySelector(s);
+const n = (x) => x.toLocaleString('en-US');
+const usd = (x) => '$' + x.toLocaleString('en-US');
+const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sold = (g) => g.bySite.reduce((a, b) => a + b, 0);
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
+  const s = document.getElementById(id); s.scrollTop = 0;
+  const h = s.querySelector('h1'); h.tabIndex = -1; h.focus({ preventScroll: true });
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-go]'); if (t) go(t.dataset.go);
+  if (e.target.closest('[data-close]') || e.target.classList.contains('sheet-bg')) closeSheets();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
+function closeSheets() { document.querySelectorAll('.sheet-bg').forEach((s) => s.classList.remove('on')); }
+
+// 1. Connect websites
+let loginSite = null;
+function renderSites() {
+  $('#site-list').innerHTML = SITES.map((s, i) => `
+    <button class="card row" data-site="${i}">
+      <span class="g-name">${s}</span>
+      <span class="pill ${connected.has(i) ? '' : 'off'}">${connected.has(i) ? 'Connected' : 'Not connected'}</span>
+    </button>`).join('');
+  $('#to-home').disabled = connected.size === 0;
+}
+$('#site-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-site]'); if (!b) return;
+  loginSite = +b.dataset.site;
+  $('#login-title').textContent = 'Log in to ' + SITES[loginSite];
+  $('#login-form').reset();
+  $('#login-sheet').classList.add('on'); $('#lu').focus();
+});
+$('#login-form').addEventListener('submit', (e) => {
+  e.preventDefault(); connected.add(loginSite); closeSheets(); renderSites();
+});
+$('#to-home').addEventListener('click', () => go('home'));
+
+// 2. Home
+$('#game-list').innerHTML = GAMES.map((g, i) => {
+  const s = sold(g);
+  return `<button class="card" data-game="${i}">
+    <div class="g-name">${g.name}</div><div class="g-date">${g.date}</div>
+    <div class="nums"><div><b>${n(s)}</b><span>sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
+    <div class="bar"><i style="width:${(s / g.seats * 100).toFixed(2)}%"></i></div>
+  </button>`;
+}).join('');
+
+// 3. Game
+$('#game-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-game]'); if (!b) return;
+  const g = GAMES[+b.dataset.game], s = sold(g);
+  $('#t-game').textContent = g.name;
+  $('#game-body').innerHTML = `
+    <div class="card">
+      <div class="g-date">${g.date}</div>
+      <div class="nums"><div><b>${n(s)}</b><span>total sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
+      <div class="bar"><i style="width:${(s / g.seats * 100).toFixed(2)}%"></i></div>
+    </div>
+    <div class="label">Sold by website</div>
+    <div class="card"><ul class="split">${SITES.map((site, i) => `<li><span>${site}</span><b>${n(g.bySite[i])}</b></li>`).join('')}</ul></div>`;
+  go('game');
+});
+
+// 4. Payouts
+$('#pay-list').innerHTML = PAYOUTS.map((p, i) => {
+  const flagged = p.sold !== p.paid;
+  const inner = `
+    <div class="row"><span class="g-name">${p.site}</span><span class="pill ${flagged ? 'flag' : ''}">${flagged ? 'Flagged' : 'Matches'}</span></div>
+    <div class="sub">Sales ${usd(p.sold)} · Payout ${usd(p.paid)}</div>
+    ${flagged ? `<div class="detail" hidden>
+      <span>Sold</span><span>${usd(p.sold)}</span>
+      <span>Paid</span><span>${usd(p.paid)}</span>
+      <span class="diff">Difference</span><span class="diff">${usd(p.sold - p.paid)}</span>
+    </div>` : ''}`;
+  return flagged
+    ? `<button class="card" data-pay="${i}" aria-expanded="false">${inner}</button>`
+    : `<div class="card">${inner}</div>`;
+}).join('');
+$('#pay-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pay]'); if (!b) return;
+  const d = b.querySelector('.detail'); d.hidden = !d.hidden;
+  b.setAttribute('aria-expanded', String(!d.hidden));
+});
+
+// 5. Invite staff
+function renderStaff() {
+  $('#staff-list').innerHTML = staff.map((s) => `<li><span>${esc(s)}</span><span class="sub">Login sent</span></li>`).join('');
+}
+$('#open-invite').addEventListener('click', () => {
+  $('#invite-form').reset(); $('#ie-err').textContent = '';
+  $('#invite-sheet').classList.add('on'); $('#ie').focus();
+});
+$('#invite-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const v = $('#ie').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { $('#ie-err').textContent = 'Enter a valid email address.'; return; }
+  staff.push(v); renderStaff(); closeSheets();
+});
+
+renderSites(); renderStaff(); go('connect');
+</script>
+</body>
+</html>

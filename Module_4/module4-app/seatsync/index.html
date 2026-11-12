@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SeatSync</title>
+<meta name="description" content="SeatSync is a phone app for sports operations managers. It adds up ticket sales from every website, so you always know how many seats are left.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+:root {
+  --navy: #1B2F5B; --ink: #0E1A33; --white: #FFFFFF; --ground: #F6F8FB;
+  --muted: #55627A; --line: #DCE2EC; --flag: #F4A62A;
+  --display: "Space Grotesk", system-ui, sans-serif; --sans: "Inter", system-ui, sans-serif;
+}
+* { box-sizing: border-box }
+html { -webkit-text-size-adjust: 100% }
+body { margin: 0; background: var(--white); color: var(--ink); font: 18px/1.55 var(--sans) }
+a { color: inherit }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px }
+
+header { border-bottom: 1px solid var(--line) }
+header .wrap { display: flex; align-items: center; height: 68px }
+.brand { font: 700 24px/1 var(--display); color: var(--navy); letter-spacing: -0.01em; text-decoration: none }
+
+.hero { padding: 72px 0 80px }
+.hero .wrap { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center }
+h1 { font: 700 clamp(38px, 5.2vw, 60px)/1.05 var(--display); letter-spacing: -0.02em; color: var(--navy); margin: 0 0 20px; text-wrap: balance }
+.sub { font-size: 20px; color: var(--muted); margin: 0 0 32px; max-width: 34em }
+.btn { display: inline-block; background: var(--navy); color: var(--white); font: 600 18px/1 var(--sans); padding: 18px 28px; border-radius: 12px; text-decoration: none; transition: background .15s }
+.btn:hover { background: var(--ink) }
+.btn:focus-visible { outline: 3px solid var(--flag); outline-offset: 3px }
+
+/* Phone mock of the Home screen */
+.phone-col { display: flex; flex-direction: column; align-items: center; gap: 12px }
+.phone { width: 300px; max-width: 100%; aspect-ratio: 300 / 610; border-radius: 44px; background: var(--ink); padding: 12px; box-shadow: 0 30px 60px rgba(14, 26, 51, .18) }
+.scr { height: 100%; border-radius: 34px; background: var(--ground); overflow: hidden; display: flex; flex-direction: column; gap: 10px }
+.app-top { background: var(--navy); color: var(--white); padding: 40px 20px 16px }
+.app-brand { font: 700 14px/1 var(--display); opacity: .75; margin-bottom: 6px }
+.app-title { font: 700 26px/1.1 var(--display) }
+.game { margin: 0 12px; padding: 12px 14px; border-radius: 16px; background: var(--white); border: 1px solid var(--line) }
+.g-name { font-weight: 700; font-size: 15px; line-height: 1.3 }
+.g-date { font-size: 12px; color: var(--muted) }
+.nums { display: flex; gap: 22px; margin-top: 6px }
+.nums b { display: block; font-size: 19px; line-height: 1.15; font-variant-numeric: tabular-nums }
+.nums span { font-size: 11px; color: var(--muted) }
+.bar { height: 6px; border-radius: 3px; background: #E3E8F1; margin-top: 8px }
+.bar i { display: block; height: 100%; border-radius: 3px; background: var(--navy) }
+.example { font-size: 13px; color: var(--muted) }
+
+.band { background: var(--ground); padding: 80px 0 }
+h2 { font: 700 clamp(28px, 3.4vw, 38px)/1.15 var(--display); color: var(--navy); margin: 0 0 28px; letter-spacing: -0.01em }
+blockquote { margin: 0; max-width: 46em; font-size: 21px; line-height: 1.6; padding-left: 24px; border-left: 4px solid var(--navy) }
+.quote-note { margin: 16px 0 0 28px; font-size: 15px; color: var(--muted) }
+
+.helps { padding: 80px 0 96px }
+.points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; list-style: none; margin: 0; padding: 0 }
+.points li { border: 1px solid var(--line); border-radius: 18px; padding: 28px }
+.points h3 { font: 700 21px/1.25 var(--display); color: var(--navy); margin: 0 0 10px }
+.points p { margin: 0; color: var(--muted) }
+.icon { width: 40px; height: 40px; border-radius: 10px; background: var(--navy); display: grid; place-items: center; margin-bottom: 18px }
+.icon svg { width: 22px; height: 22px; stroke: var(--white); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+
+footer { border-top: 1px solid var(--line); padding: 28px 0; font-size: 15px; color: var(--muted) }
+
+@media (max-width: 860px) {
+  .hero { padding: 48px 0 56px }
+  .hero .wrap { grid-template-columns: 1fr; gap: 44px }
+  .points { grid-template-columns: 1fr }
+  .band, .helps { padding: 56px 0 }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 0 16px }
+  body { font-size: 17px }
+  .sub { font-size: 18px }
+  blockquote { font-size: 18px; padding-left: 16px }
+  .quote-note { margin-left: 20px }
+  .btn { display: block; text-align: center }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap"><a class="brand" href="./">SeatSync</a></div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>One live ticket count, from every website you sell on.</h1>
+        <p class="sub">SeatSync is a phone app for sports operations managers. It adds up ticket sales from every website, so you always know how many seats are left.</p>
+        <a class="btn" href="app.html">Open SeatSync</a>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone" role="img" aria-label="The SeatSync Home screen on a phone, showing three games with tickets sold and seats left.">
+          <div class="scr" aria-hidden="true">
+            <div class="app-top"><div class="app-brand">SeatSync</div><div class="app-title">Home</div></div>
+            <div class="game">
+              <div class="g-name">vs. Harbor City</div><div class="g-date">Sat, Nov 21</div>
+              <div class="nums"><div><b>8,412</b><span>sold</span></div><div><b>1,588</b><span>seats left</span></div></div>
+              <div class="bar"><i style="width:84.12%"></i></div>
+            </div>
+            <div class="game">
+              <div class="g-name">vs. Lakeview</div><div class="g-date">Sat, Nov 28</div>
+              <div class="nums"><div><b>6,905</b><span>sold</span></div><div><b>3,095</b><span>seats left</span></div></div>
+              <div class="bar"><i style="width:69.05%"></i></div>
+            </div>
+            <div class="game">
+              <div class="g-name">vs. Northgate</div><div class="g-date">Sat, Dec 5</div>
+              <div class="nums"><div><b>4,230</b><span>sold</span></div><div><b>5,770</b><span>seats left</span></div></div>
+              <div class="bar"><i style="width:42.3%"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="example">Example data</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>The problem</h2>
+      <blockquote>
+        “We sell tickets on a few different websites, and none of them talk to each other. To get a real total, I'm copying numbers into a spreadsheet, and by the time I'm done it's already out of date. That's how we end up overselling a game, or pulling promotions for a game that wasn't really sold out. And at the end of the month, I'm still trying to figure out whether every site paid us what it owed.”
+      </blockquote>
+      <p class="quote-note">How an operations manager would describe it to a coworker.</p>
+    </div>
+  </section>
+
+  <section class="helps">
+    <div class="wrap">
+      <h2>How SeatSync helps</h2>
+      <ul class="points">
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg></div>
+          <h3>One live total</h3>
+          <p>See tickets sold and seats left for every game, across every website, on one screen.</p>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+          <h3>No overselling</h3>
+          <p>When a seat sells on one website, SeatSync takes it off the others, and it warns you when only 10% of seats are left.</p>
+        </li>
+        <li>
+          <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+          <h3>No missed payouts</h3>
+          <p>SeatSync checks each website's payout against its sales and flags any that don't match.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">SeatSync</div>
+</footer>
+
+</body>
+</html>
