@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SeatSync App</title>
-<meta name="description" content="A tap-through demo of the SeatSync phone app, using example data.">
+<meta name="description" content="SeatSync: one ticket count across every website you sell on.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap">
 <style>
 :root {
   --navy: #1B2F5B; --ink: #0E1A33; --white: #FFFFFF; --ground: #F6F8FB;
-  --muted: #55627A; --line: #DCE2EC; --flag: #F4A62A; --ok: #E6ECF6;
+  --muted: #55627A; --line: #DCE2EC; --flag: #F4A62A; --ok: #E6ECF6; --warn-bg: #FFF4E0;
   --display: "Space Grotesk", system-ui, sans-serif; --sans: "Inter", system-ui, sans-serif;
 }
 * { box-sizing: border-box }
@@ -20,9 +20,10 @@ body { margin: 0; background: #E9EDF3; color: var(--ink); font: 16px/1.45 var(--
 button, input { font: inherit; color: inherit }
 button { cursor: pointer }
 button:focus-visible, input:focus-visible { outline: 3px solid var(--flag); outline-offset: 2px }
+[hidden] { display: none !important }
 
-.demo-note { font-size: 14px; color: var(--muted); text-align: center }
-.demo-note a { color: var(--navy); font-weight: 600 }
+.foot-note { font-size: 14px; color: var(--muted); text-align: center; max-width: 390px }
+.foot-note a { color: var(--navy); font-weight: 600 }
 
 /* Phone frame on wide screens; full screen on phones */
 .phone { width: 390px; height: min(844px, calc(100vh - 100px)); min-height: 600px; border-radius: 52px; background: var(--ink); padding: 12px; box-shadow: 0 30px 60px rgba(14, 26, 51, .22) }
@@ -31,26 +32,35 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--flag); outl
   body { padding: 0; gap: 0; justify-content: flex-start; background: var(--ground) }
   .phone { width: 100%; height: auto; min-height: 0; flex: 1; border-radius: 0; padding: 0; box-shadow: none }
   .scr { border-radius: 0 }
-  .demo-note { order: 2; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--white); width: 100%; border-top: 1px solid var(--line) }
+  .foot-note { order: 2; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--white); width: 100%; max-width: none; border-top: 1px solid var(--line) }
 }
+/* Inside the web page (iframe): fill the frame, the page supplies the phone and the note */
+.embed body { padding: 0; gap: 0; justify-content: flex-start; background: var(--ground) }
+.embed .phone { width: 100%; height: auto; min-height: 0; flex: 1; border-radius: 0; padding: 0; box-shadow: none }
+.embed .scr { border-radius: 0 }
+.embed .foot-note { display: none }
+.embed .top { padding-top: 34px }
 
 .screen { position: absolute; inset: 0; display: none; flex-direction: column; overflow-y: auto }
 .screen.on { display: flex }
 .top { background: var(--navy); color: var(--white); padding: 44px 20px 18px; flex: none }
 .top .brand { font: 700 14px/1 var(--display); opacity: .75; margin-bottom: 6px }
-.top h1 { font: 700 30px/1.1 var(--display); margin: 0 }
+.top h1 { font: 700 30px/1.1 var(--display); margin: 0; overflow-wrap: anywhere }
+.top h1:focus { outline: none }
 .back { background: none; border: 0; color: var(--white); padding: 0; margin: 0 0 10px; font-weight: 600; opacity: .9 }
 .body { padding: 14px 14px 24px; display: flex; flex-direction: column; gap: 10px }
+.stack { display: flex; flex-direction: column; gap: 10px }
 .hint { color: var(--muted); font-size: 14px; margin: 2px 4px }
+.empty { color: var(--muted); font-size: 15px; text-align: center; padding: 22px 12px; border: 1px dashed var(--line); border-radius: 18px; background: var(--white) }
 
 .card { display: block; width: 100%; text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px }
 button.card:hover { border-color: #B9C4D6 }
-.g-name { font-weight: 700; font-size: 17px }
+.g-name { font-weight: 700; font-size: 17px; overflow-wrap: anywhere }
 .g-date { font-size: 13px; color: var(--muted) }
 .nums { display: flex; gap: 26px; margin-top: 6px }
 .nums b { display: block; font-size: 22px; line-height: 1.15; font-variant-numeric: tabular-nums }
 .nums span { font-size: 12px; color: var(--muted) }
-.bar { height: 7px; border-radius: 4px; background: #E3E8F1; margin-top: 10px }
+.bar { height: 7px; border-radius: 4px; background: #E3E8F1; margin-top: 10px; overflow: hidden }
 .bar i { display: block; height: 100%; border-radius: 4px; background: var(--navy) }
 
 .row { display: flex; justify-content: space-between; align-items: center; gap: 12px }
@@ -62,26 +72,38 @@ button.card:hover { border-color: #B9C4D6 }
 .detail .diff { font-weight: 700 }
 .detail span:nth-child(even) { text-align: right }
 
+.warn { background: var(--warn-bg); border: 1px solid var(--flag); border-radius: 14px; padding: 10px 14px; font-size: 14px; font-weight: 600 }
+
 .nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px }
 .btn { background: var(--navy); color: var(--white); border: 0; border-radius: 14px; padding: 14px 16px; font-weight: 600 }
 .btn:hover { background: var(--ink) }
 .btn.ghost { background: var(--white); color: var(--navy); border: 1px solid var(--line) }
+.btn.danger { background: var(--white); color: #A34A00; border: 1px solid var(--line) }
 .btn:disabled { opacity: .45; cursor: default }
+.link { background: none; border: 0; padding: 4px; color: var(--navy); font-weight: 600; font-size: 14px; text-decoration: underline }
+.x { background: none; border: 0; padding: 4px 8px; color: var(--muted); font-size: 14px; font-weight: 600 }
 
 .split { list-style: none; margin: 0; padding: 0 }
-.split li { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums }
+.split li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums }
 .split li:first-child { border-top: 0 }
+.split li span:first-child { overflow-wrap: anywhere }
+.split input { width: 110px; text-align: right; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--ground) }
 .label { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 8px 4px 0 }
 
-/* Bottom sheet for website login and staff invite */
+.add-row { display: flex; gap: 8px }
+.add-row input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--white) }
+.add-row .btn { padding: 12px 16px }
+
+/* Bottom sheets */
 .sheet-bg { position: absolute; inset: 0; background: rgba(14, 26, 51, .4); display: none; align-items: flex-end }
 .sheet-bg.on { display: flex }
-.sheet { width: 100%; background: var(--white); border-radius: 24px 24px 0 0; padding: 22px 18px 28px; display: flex; flex-direction: column; gap: 10px }
-.sheet h2 { font: 700 22px/1.2 var(--display); margin: 0 0 4px; color: var(--navy) }
+.sheet { width: 100%; background: var(--white); border-radius: 24px 24px 0 0; padding: 22px 18px 28px; display: flex; flex-direction: column; gap: 10px; max-height: 100%; overflow-y: auto }
+.sheet h2 { font: 700 22px/1.2 var(--display); margin: 0 0 4px; color: var(--navy); overflow-wrap: anywhere }
 .sheet label { font-size: 13px; font-weight: 600; color: var(--muted) }
 .sheet input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--ground) }
 .sheet .nav { margin-top: 8px }
 .err { color: #A34A00; font-size: 13px; min-height: 18px }
+.saved { color: var(--navy); font-size: 13px; font-weight: 600; min-height: 18px; text-align: center }
 </style>
 </head>
 <body>
@@ -89,12 +111,17 @@ button.card:hover { border-color: #B9C4D6 }
 <div class="phone">
   <div class="scr">
 
-    <!-- 1. Connect websites (first time only) -->
+    <!-- 1. Connect websites -->
     <section class="screen" id="connect" aria-labelledby="t-connect">
-      <div class="top"><div class="brand">SeatSync</div><h1 id="t-connect">Connect websites</h1></div>
+      <div class="top"><div class="brand">SeatSync</div><h1 id="t-connect">Your websites</h1></div>
       <div class="body">
-        <p class="hint">Tap a website and log in once to connect it.</p>
-        <div id="site-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <p class="hint">Add each website you sell tickets on, for example your team website or Ticketmaster.</p>
+        <form class="add-row" id="site-form">
+          <input id="site-name" aria-label="Website name" placeholder="Website name" autocomplete="off" maxlength="40">
+          <button class="btn">Add</button>
+        </form>
+        <div class="err" id="site-err"></div>
+        <div class="card" id="site-card"><ul class="split" id="site-list"></ul></div>
         <button class="btn" id="to-home" style="margin-top:6px" disabled>Continue</button>
       </div>
     </section>
@@ -103,26 +130,39 @@ button.card:hover { border-color: #B9C4D6 }
     <section class="screen" id="home" aria-labelledby="t-home">
       <div class="top"><div class="brand">SeatSync</div><h1 id="t-home">Home</h1></div>
       <div class="body">
-        <div id="game-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div id="home-warn" class="stack"></div>
+        <div id="game-list" class="stack"></div>
+        <button class="btn ghost" id="open-add-game">+ Add game</button>
         <div class="nav">
           <button class="btn" data-go="payouts">Payouts</button>
           <button class="btn ghost" data-go="invite">Invite staff</button>
         </div>
+        <button class="link" data-go="connect" style="align-self:center">Edit websites</button>
       </div>
     </section>
 
     <!-- 3. Game -->
     <section class="screen" id="game" aria-labelledby="t-game">
       <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-game">Game</h1></div>
-      <div class="body" id="game-body"></div>
+      <div class="body">
+        <div id="game-sum"></div>
+        <div class="label">Tickets sold by website</div>
+        <form id="game-form" class="stack">
+          <div class="card"><ul class="split" id="game-sites"></ul></div>
+          <button class="btn">Save</button>
+          <div class="saved" id="game-saved" aria-live="polite"></div>
+        </form>
+        <p class="hint">SeatSync can't change your listings. When a game is nearly sold out, take the seats off each website yourself.</p>
+        <button class="btn danger" id="del-game">Delete this game</button>
+      </div>
     </section>
 
     <!-- 4. Payouts -->
     <section class="screen" id="payouts" aria-labelledby="t-payouts">
       <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-payouts">Payouts</h1></div>
       <div class="body">
-        <p class="hint">Tap a flagged website to see the difference.</p>
-        <div id="pay-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <p class="hint">Enter what each website sold and what it paid you. Tap a flagged website to see the difference.</p>
+        <div id="pay-list" class="stack"></div>
       </div>
     </section>
 
@@ -130,20 +170,32 @@ button.card:hover { border-color: #B9C4D6 }
     <section class="screen" id="invite" aria-labelledby="t-invite">
       <div class="top"><button class="back" data-go="home">‹ Back</button><h1 id="t-invite">Invite staff</h1></div>
       <div class="body">
-        <p class="hint">Staff get their own login and see the same screens you do.</p>
-        <div class="card"><ul class="split" id="staff-list"></ul></div>
+        <p class="hint">Inviting someone opens your email app with an invite already written. Check it, then send it.</p>
+        <div id="staff-box"></div>
         <button class="btn" id="open-invite">Invite</button>
       </div>
     </section>
 
-    <!-- Website login sheet -->
-    <div class="sheet-bg" id="login-sheet">
-      <form class="sheet" id="login-form">
-        <h2 id="login-title">Log in</h2>
-        <label for="lu">Username</label><input id="lu" autocomplete="off">
-        <label for="lp">Password</label><input id="lp" type="password" autocomplete="off">
-        <div class="hint" style="margin:0">Demo only. Nothing you type is saved or sent.</div>
-        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Connect</button></div>
+    <!-- Add game sheet -->
+    <div class="sheet-bg" id="game-sheet">
+      <form class="sheet" id="add-game-form" novalidate>
+        <h2>Add game</h2>
+        <label for="gn">Opponent or game name</label><input id="gn" placeholder="vs. Harbor City" autocomplete="off" maxlength="40">
+        <label for="gd">Date</label><input id="gd" type="date">
+        <label for="gs">Total seats</label><input id="gs" type="number" inputmode="numeric" min="1" step="1" placeholder="10000">
+        <div class="err" id="g-err"></div>
+        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Add game</button></div>
+      </form>
+    </div>
+
+    <!-- Payout sheet -->
+    <div class="sheet-bg" id="pay-sheet">
+      <form class="sheet" id="pay-form" novalidate>
+        <h2 id="pay-title">Payout</h2>
+        <label for="ps">What it sold ($)</label><input id="ps" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        <label for="pp">What it paid you ($)</label><input id="pp" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        <div class="err" id="p-err"></div>
+        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Save</button></div>
       </form>
     </div>
 
@@ -153,39 +205,44 @@ button.card:hover { border-color: #B9C4D6 }
         <h2>Invite staff</h2>
         <label for="ie">Staff email</label><input id="ie" type="email" placeholder="name@example.com" autocomplete="off">
         <div class="err" id="ie-err"></div>
-        <div class="hint" style="margin:0">Demo only. No email is sent.</div>
-        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Invite</button></div>
+        <div class="nav"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Write invite</button></div>
       </form>
     </div>
 
   </div>
 </div>
 
-<p class="demo-note">Demo with example data. <a href="./">Back to SeatSync</a></p>
+<p class="foot-note">Your numbers are saved on this device only. <a href="./">About SeatSync</a></p>
 
 <script>
-// Example data, matching the SeatSync ad. Not real sales.
-const SITES = ['Team website', 'Ticket site', 'Resale site'];
-const GAMES = [
-  { name: 'vs. Harbor City', date: 'Sat, Nov 21', seats: 10000, bySite: [3112, 4086, 1214] },
-  { name: 'vs. Lakeview',    date: 'Sat, Nov 28', seats: 10000, bySite: [2540, 3365, 1000] },
-  { name: 'vs. Northgate',   date: 'Sat, Dec 5',  seats: 10000, bySite: [1610, 2030, 590] },
-];
-const PAYOUTS = [
-  { site: 'Team website', sold: 412600, paid: 412600 },
-  { site: 'Resale site',  sold: 188400, paid: 188400 },
-  { site: 'Ticket site',  sold: 96250,  paid: 91750 },
-];
-const staff = ['ops.assistant@example.com', 'box.office@example.com'];
-const connected = new Set();
+try { if (window.self !== window.top) document.documentElement.classList.add('embed'); } catch (e) { document.documentElement.classList.add('embed'); }
+// ---------- Saved data (this device only) ----------
+const KEY = 'seatsync-data-v1';
+const blank = () => ({ sites: [], games: [], payouts: {}, staff: [] });
+let data = blank();
+try { const raw = localStorage.getItem(KEY); if (raw) data = Object.assign(blank(), JSON.parse(raw)); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// ---------- Helpers ----------
 const $ = (s) => document.querySelector(s);
 const n = (x) => x.toLocaleString('en-US');
-const usd = (x) => '$' + x.toLocaleString('en-US');
-const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sold = (g) => g.bySite.reduce((a, b) => a + b, 0);
+const usd = (x) => '$' + x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const soldOf = (g) => data.sites.reduce((a, s) => a + (g.sold[s.id] || 0), 0);
+const lowSeats = (g) => { const left = g.seats - soldOf(g); return left <= g.seats * 0.1; };
+function niceDate(iso) {
+  if (!iso) return 'No date';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+const pct = (g) => Math.min(100, Math.max(0, soldOf(g) / g.seats * 100)).toFixed(2);
 
 function go(id) {
+  if (id === 'home') renderHome();
+  if (id === 'payouts') renderPayouts();
+  if (id === 'invite') renderStaff();
+  if (id === 'connect') renderSites();
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('on', s.id === id));
   const s = document.getElementById(id); s.scrollTop = 0;
   const h = s.querySelector('h1'); h.tabIndex = -1; h.focus({ preventScroll: true });
@@ -196,92 +253,171 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheets(); });
 function closeSheets() { document.querySelectorAll('.sheet-bg').forEach((s) => s.classList.remove('on')); }
+function openSheet(id, focusSel) { $(id).classList.add('on'); $(focusSel).focus(); }
 
-// 1. Connect websites
-let loginSite = null;
+// ---------- 1. Connect websites ----------
 function renderSites() {
-  $('#site-list').innerHTML = SITES.map((s, i) => `
-    <button class="card row" data-site="${i}">
-      <span class="g-name">${s}</span>
-      <span class="pill ${connected.has(i) ? '' : 'off'}">${connected.has(i) ? 'Connected' : 'Not connected'}</span>
-    </button>`).join('');
-  $('#to-home').disabled = connected.size === 0;
+  $('#site-card').hidden = data.sites.length === 0;
+  $('#site-list').innerHTML = data.sites.map((s) => `
+    <li><span class="g-name">${esc(s.name)}</span>
+    <button class="x" data-del-site="${s.id}" aria-label="Remove ${esc(s.name)}">Remove</button></li>`).join('');
+  $('#to-home').disabled = data.sites.length === 0;
 }
-$('#site-list').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-site]'); if (!b) return;
-  loginSite = +b.dataset.site;
-  $('#login-title').textContent = 'Log in to ' + SITES[loginSite];
-  $('#login-form').reset();
-  $('#login-sheet').classList.add('on'); $('#lu').focus();
+$('#site-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const v = $('#site-name').value.trim();
+  if (!v) { $('#site-err').textContent = 'Type a website name.'; return; }
+  if (data.sites.some((s) => s.name.toLowerCase() === v.toLowerCase())) { $('#site-err').textContent = 'That website is already on the list.'; return; }
+  data.sites.push({ id: uid(), name: v }); save();
+  $('#site-name').value = ''; $('#site-err').textContent = ''; renderSites(); $('#site-name').focus();
 });
-$('#login-form').addEventListener('submit', (e) => {
-  e.preventDefault(); connected.add(loginSite); closeSheets(); renderSites();
+$('#site-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-del-site]'); if (!b) return;
+  const site = data.sites.find((s) => s.id === b.dataset.delSite);
+  if (!confirm(`Remove ${site.name}? Its ticket counts and payout will be deleted too.`)) return;
+  data.sites = data.sites.filter((s) => s.id !== site.id);
+  data.games.forEach((g) => delete g.sold[site.id]);
+  delete data.payouts[site.id];
+  save(); renderSites();
 });
 $('#to-home').addEventListener('click', () => go('home'));
 
-// 2. Home
-$('#game-list').innerHTML = GAMES.map((g, i) => {
-  const s = sold(g);
-  return `<button class="card" data-game="${i}">
-    <div class="g-name">${g.name}</div><div class="g-date">${g.date}</div>
-    <div class="nums"><div><b>${n(s)}</b><span>sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
-    <div class="bar"><i style="width:${(s / g.seats * 100).toFixed(2)}%"></i></div>
-  </button>`;
-}).join('');
-
-// 3. Game
+// ---------- 2. Home ----------
+function renderHome() {
+  const games = [...data.games].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  $('#home-warn').innerHTML = games.filter(lowSeats).map((g) =>
+    `<div class="warn" role="status">10% of seats or fewer left: ${esc(g.name)}</div>`).join('');
+  $('#game-list').innerHTML = games.length ? games.map((g) => {
+    const s = soldOf(g);
+    return `<button class="card" data-game="${g.id}">
+      <div class="row"><div><div class="g-name">${esc(g.name)}</div><div class="g-date">${niceDate(g.date)}</div></div>
+      ${lowSeats(g) ? '<span class="pill flag">10% left</span>' : ''}</div>
+      <div class="nums"><div><b>${n(s)}</b><span>sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
+      <div class="bar"><i style="width:${pct(g)}%"></i></div>
+    </button>`;
+  }).join('') : '<div class="empty">No games yet. Tap “Add game” to start.</div>';
+}
+$('#open-add-game').addEventListener('click', () => {
+  $('#add-game-form').reset(); $('#g-err').textContent = ''; openSheet('#game-sheet', '#gn');
+});
+$('#add-game-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = $('#gn').value.trim(), date = $('#gd').value, seats = Number($('#gs').value);
+  if (!name) { $('#g-err').textContent = 'Type a game name.'; return; }
+  if (!Number.isInteger(seats) || seats < 1) { $('#g-err').textContent = 'Total seats must be a whole number above 0.'; return; }
+  const g = { id: uid(), name, date, seats, sold: {} };
+  data.games.push(g); save(); closeSheets(); openGame(g.id);
+});
 $('#game-list').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-game]'); if (!b) return;
-  const g = GAMES[+b.dataset.game], s = sold(g);
-  $('#t-game').textContent = g.name;
-  $('#game-body').innerHTML = `
-    <div class="card">
-      <div class="g-date">${g.date}</div>
-      <div class="nums"><div><b>${n(s)}</b><span>total sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
-      <div class="bar"><i style="width:${(s / g.seats * 100).toFixed(2)}%"></i></div>
-    </div>
-    <div class="label">Sold by website</div>
-    <div class="card"><ul class="split">${SITES.map((site, i) => `<li><span>${site}</span><b>${n(g.bySite[i])}</b></li>`).join('')}</ul></div>`;
-  go('game');
+  const b = e.target.closest('[data-game]'); if (b) openGame(b.dataset.game);
 });
 
-// 4. Payouts
-$('#pay-list').innerHTML = PAYOUTS.map((p, i) => {
-  const flagged = p.sold !== p.paid;
-  const inner = `
-    <div class="row"><span class="g-name">${p.site}</span><span class="pill ${flagged ? 'flag' : ''}">${flagged ? 'Flagged' : 'Matches'}</span></div>
-    <div class="sub">Sales ${usd(p.sold)} · Payout ${usd(p.paid)}</div>
-    ${flagged ? `<div class="detail" hidden>
-      <span>Sold</span><span>${usd(p.sold)}</span>
-      <span>Paid</span><span>${usd(p.paid)}</span>
-      <span class="diff">Difference</span><span class="diff">${usd(p.sold - p.paid)}</span>
-    </div>` : ''}`;
-  return flagged
-    ? `<button class="card" data-pay="${i}" aria-expanded="false">${inner}</button>`
-    : `<div class="card">${inner}</div>`;
-}).join('');
+// ---------- 3. Game ----------
+let currentGame = null;
+function renderGameSum() {
+  const g = currentGame, s = soldOf(g);
+  $('#game-sum').innerHTML = `
+    ${lowSeats(g) ? '<div class="warn" role="status" style="margin-bottom:10px">10% of seats or fewer left for this game.</div>' : ''}
+    <div class="card">
+      <div class="g-date">${niceDate(g.date)} · ${n(g.seats)} seats</div>
+      <div class="nums"><div><b>${n(s)}</b><span>total sold</span></div><div><b>${n(g.seats - s)}</b><span>seats left</span></div></div>
+      <div class="bar"><i style="width:${pct(g)}%"></i></div>
+    </div>`;
+}
+function openGame(id) {
+  currentGame = data.games.find((g) => g.id === id); if (!currentGame) return;
+  $('#t-game').textContent = currentGame.name;
+  $('#game-saved').textContent = '';
+  renderGameSum();
+  $('#game-sites').innerHTML = data.sites.map((s) => `
+    <li><label for="gs-${s.id}">${esc(s.name)}</label>
+    <input id="gs-${s.id}" data-site="${s.id}" type="number" inputmode="numeric" min="0" step="1" value="${currentGame.sold[s.id] ?? ''}" placeholder="0"></li>`).join('');
+  go('game');
+}
+$('#game-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const inputs = [...$('#game-sites').querySelectorAll('input')];
+  for (const i of inputs) {
+    const v = i.value === '' ? 0 : Number(i.value);
+    if (!Number.isInteger(v) || v < 0) { $('#game-saved').textContent = 'Ticket counts must be whole numbers, 0 or more.'; i.focus(); return; }
+  }
+  inputs.forEach((i) => { currentGame.sold[i.dataset.site] = i.value === '' ? 0 : Number(i.value); });
+  save(); renderGameSum(); $('#game-saved').textContent = 'Saved.';
+});
+$('#game-sites').addEventListener('input', () => { $('#game-saved').textContent = ''; });
+$('#del-game').addEventListener('click', () => {
+  if (!confirm(`Delete ${currentGame.name}? This can't be undone.`)) return;
+  data.games = data.games.filter((g) => g.id !== currentGame.id); save(); go('home');
+});
+
+// ---------- 4. Payouts ----------
+function renderPayouts() {
+  $('#pay-list').innerHTML = data.sites.length ? data.sites.map((s) => {
+    const p = data.payouts[s.id];
+    if (!p) return `<button class="card" data-edit-pay="${s.id}">
+      <div class="row"><span class="g-name">${esc(s.name)}</span><span class="pill off">Not entered</span></div>
+      <div class="sub">Tap to enter sales and payout</div></button>`;
+    const diff = Math.round((p.sold - p.paid) * 100) / 100, flagged = diff !== 0;
+    return `<div class="card">
+      ${flagged ? `<button class="card" style="border:0;padding:0" data-pay="${s.id}" aria-expanded="false">` : '<div>'}
+        <div class="row"><span class="g-name">${esc(s.name)}</span><span class="pill ${flagged ? 'flag' : ''}">${flagged ? 'Flagged' : 'Matches'}</span></div>
+        <div class="sub">Sales ${usd(p.sold)} · Payout ${usd(p.paid)}</div>
+        ${flagged ? `<div class="detail" hidden>
+          <span>Sold</span><span>${usd(p.sold)}</span>
+          <span>Paid</span><span>${usd(p.paid)}</span>
+          <span class="diff">Difference</span><span class="diff">${diff < 0 ? '−' : ''}${usd(Math.abs(diff))}</span>
+        </div>` : ''}
+      ${flagged ? '</button>' : '</div>'}
+      <button class="link" data-edit-pay="${s.id}" style="margin-top:6px;padding-left:0">Edit amounts</button>
+    </div>`;
+  }).join('') : '<div class="empty">Add a website first, from “Edit websites” on Home.</div>';
+}
+let paySite = null;
 $('#pay-list').addEventListener('click', (e) => {
+  const ed = e.target.closest('[data-edit-pay]');
+  if (ed) {
+    paySite = ed.dataset.editPay;
+    const site = data.sites.find((s) => s.id === paySite), p = data.payouts[paySite];
+    $('#pay-title').textContent = site.name;
+    $('#ps').value = p ? p.sold : ''; $('#pp').value = p ? p.paid : ''; $('#p-err').textContent = '';
+    openSheet('#pay-sheet', '#ps'); return;
+  }
   const b = e.target.closest('[data-pay]'); if (!b) return;
   const d = b.querySelector('.detail'); d.hidden = !d.hidden;
   b.setAttribute('aria-expanded', String(!d.hidden));
 });
+$('#pay-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const sold = Number($('#ps').value), paid = Number($('#pp').value);
+  if ($('#ps').value === '' || $('#pp').value === '' || !(sold >= 0) || !(paid >= 0)) { $('#p-err').textContent = 'Enter both amounts, 0 or more.'; return; }
+  data.payouts[paySite] = { sold: Math.round(sold * 100) / 100, paid: Math.round(paid * 100) / 100 };
+  save(); closeSheets(); renderPayouts();
+});
 
-// 5. Invite staff
+// ---------- 5. Invite staff ----------
 function renderStaff() {
-  $('#staff-list').innerHTML = staff.map((s) => `<li><span>${esc(s)}</span><span class="sub">Login sent</span></li>`).join('');
+  $('#staff-box').innerHTML = data.staff.length
+    ? `<div class="card"><ul class="split">${data.staff.map((s) => `<li><span>${esc(s)}</span><span class="sub">Invite written</span></li>`).join('')}</ul></div>`
+    : '<div class="empty">No staff invited yet.</div>';
 }
 $('#open-invite').addEventListener('click', () => {
-  $('#invite-form').reset(); $('#ie-err').textContent = '';
-  $('#invite-sheet').classList.add('on'); $('#ie').focus();
+  $('#invite-form').reset(); $('#ie-err').textContent = ''; openSheet('#invite-sheet', '#ie');
 });
 $('#invite-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const v = $('#ie').value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { $('#ie-err').textContent = 'Enter a valid email address.'; return; }
-  staff.push(v); renderStaff(); closeSheets();
+  if (!data.staff.includes(v)) data.staff.push(v);
+  save(); renderStaff(); closeSheets();
+  const link = location.href.split('#')[0];
+  const body = `Hi,\n\nI'd like you to use SeatSync to check our ticket counts. Open it on your phone here:\n${link}\n\nThanks!`;
+  const a = document.createElement('a');
+  a.href = `mailto:${encodeURIComponent(v)}?subject=${encodeURIComponent('Join me on SeatSync')}&body=${encodeURIComponent(body)}`;
+  a.target = '_top'; document.body.appendChild(a); a.click(); a.remove();
 });
 
-renderSites(); renderStaff(); go('connect');
+// ---------- Start ----------
+go(data.sites.length ? 'home' : 'connect');
 </script>
 </body>
 </html>

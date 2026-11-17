@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SeatSync app ad</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+:root { --navy: #1B2F5B; --ink: #0E1A33; --white: #FFFFFF; --ground: #F6F8FB; --muted: #55627A; --flag: #F4A62A }
+* { box-sizing: border-box }
+html, body { margin: 0; background: #000 }
+#stage { position: relative; width: 1080px; height: 1080px; overflow: hidden; background: var(--ground); font-family: "Inter", sans-serif; color: var(--ink) }
+
+/* Left: captions */
+.cap-col { position: absolute; left: 70px; top: 0; bottom: 0; width: 470px; display: flex; flex-direction: column; justify-content: center }
+.brand { position: absolute; left: 70px; top: 64px; font: 700 34px/1 "Space Grotesk", sans-serif; color: var(--navy) }
+.cap { position: absolute; left: 0; right: 0; opacity: 0; transform: translateY(24px) }
+.cap .step { font: 700 22px/1 "Space Grotesk", sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--flag); margin-bottom: 18px }
+.cap h2 { font: 700 58px/1.06 "Space Grotesk", sans-serif; letter-spacing: -.02em; color: var(--navy); margin: 0 }
+.cap p { font-size: 26px; line-height: 1.4; color: var(--muted); margin: 22px 0 0 }
+
+/* Right: the real app in a phone */
+.phone { position: absolute; left: 590px; top: 66px; width: 414px; height: 868px; border-radius: 56px; background: var(--ink); padding: 12px; transform-origin: 0 0; transform: scale(1.09); box-shadow: 0 40px 80px rgba(14, 26, 51, .25) }
+.phone iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 44px; background: var(--ground) }
+.tap { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(244, 166, 42, .35); border: 4px solid var(--flag); opacity: 0; pointer-events: none }
+
+/* End card */
+.end { position: absolute; inset: 0; background: var(--navy); color: var(--white); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; opacity: 0 }
+.end .logo { font: 700 120px/1 "Space Grotesk", sans-serif; letter-spacing: -.03em }
+.end .line { font: 600 44px/1.2 "Space Grotesk", sans-serif; margin-top: 26px; opacity: .9 }
+.end .note { font-size: 24px; margin-top: 40px; opacity: .7 }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="brand">SeatSync</div>
+  <div class="cap-col">
+    <div class="cap" id="c0"><h2>Selling tickets on more than one website?</h2><p>SeatSync puts every count in one place.</p></div>
+    <div class="cap" id="c1"><div class="step">Step 1</div><h2>Add the websites you sell on.</h2></div>
+    <div class="cap" id="c2"><div class="step">Step 2</div><h2>Add a game and its seats.</h2></div>
+    <div class="cap" id="c3"><div class="step">Step 3</div><h2>Type in what each website sold.</h2><p id="c3p" style="opacity:0">SeatSync adds it up and warns you at 10% seats left.</p></div>
+    <div class="cap" id="c4"><div class="step">Step 4</div><h2>Check every payout.</h2><p id="c4p" style="opacity:0">Any payout that doesn't match its sales is flagged.</p></div>
+  </div>
+  <div class="phone" id="phone"><iframe id="app" title="SeatSync"></iframe></div>
+  <div class="tap" id="tap"></div>
+  <div class="end" id="end">
+    <div class="logo">SeatSync</div>
+    <div class="line">One count. Every website.</div>
+    <div class="note">Try it on the SeatSync web page.</div>
+  </div>
+</div>
+
+<script>
+const DURATION = 20;
+const SCALE = 1.09, PHONE_X = 590, PHONE_Y = 66, PAD = 12;
+let doc, win;
+
+// ---------- Timeline of real actions in the app ----------
+const type = (sel, text, t0, t1) => ({ t: t0, t1, kind: 'type', sel, text });
+const tap = (sel, t) => ({ t, kind: 'tap', sel });
+const ACTIONS = [
+  type('#site-name', 'Team website', 2.3, 3.0), tap('#site-form .btn', 3.25),
+  type('#site-name', 'Ticketmaster', 3.6, 4.3), tap('#site-form .btn', 4.55),
+  tap('#to-home', 5.4),
+  tap('#open-add-game', 6.3),
+  type('#gn', 'vs. Harbor City', 6.7, 7.4), { t: 7.6, kind: 'set', sel: '#gd', value: '2026-11-21' },
+  type('#gs', '10000', 7.8, 8.3), tap('#add-game-form .btn:not(.ghost)', 8.75),
+  type('#game-sites li:nth-child(1) input', '5120', 9.9, 10.4),
+  type('#game-sites li:nth-child(2) input', '4030', 10.6, 11.1), tap('#game-form .btn', 11.5),
+  tap('#game .back', 13.6),
+  tap('#home [data-go=payouts]', 14.25),
+  tap('#pay-list [data-edit-pay]', 14.75),
+  type('#ps', '96250', 15.05, 15.45), type('#pp', '91750', 15.6, 16.0), tap('#pay-form .btn:not(.ghost)', 16.25),
+  tap('#pay-list [data-pay]', 16.75),
+];
+window.TAPS = ACTIONS.filter(a => a.kind === 'tap').map(a => a.t);
+window.DINGS = [11.5, 16.75];
+
+// Captions: [id, in, out]
+const CAPS = [['c0', 0.2, 1.9], ['c1', 2.0, 5.8], ['c2', 6.0, 9.4], ['c3', 9.6, 13.4], ['c4', 13.6, 17.6]];
+
+let done = 0; // index of next action not yet finished
+function el(sel) { return doc.querySelector(sel); }
+function setVal(input, v) { input.value = v; input.dispatchEvent(new win.Event('input', { bubbles: true })); }
+function center(sel) {
+  const r = el(sel).getBoundingClientRect();
+  return [PHONE_X + (PAD + r.left + r.width / 2) * SCALE, PHONE_Y + (PAD + r.top + r.height / 2) * SCALE];
+}
+let lastTap = null;
+function runActions(t) {
+  while (done < ACTIONS.length) {
+    const a = ACTIONS[done];
+    if (a.kind === 'type') {
+      if (t < a.t) return;
+      const k = Math.min(a.text.length, Math.floor((t - a.t) / (a.t1 - a.t) * a.text.length) + 1);
+      const input = el(a.sel);
+      if (doc.activeElement !== input) input.focus();
+      if (input.value !== a.text.slice(0, k)) setVal(input, a.text.slice(0, k));
+      if (t < a.t1) return;
+      setVal(input, a.text); done++;
+    } else if (a.kind === 'set') {
+      if (t < a.t) return;
+      setVal(el(a.sel), a.value); done++;
+    } else if (a.kind === 'tap') {
+      if (t < a.t) return;
+      const [x, y] = center(a.sel); lastTap = { t: a.t, x, y };
+      if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
+      el(a.sel).click(); done++;
+    }
+  }
+}
+
+const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+function seek(t) {
+  runActions(t);
+  // tap ring
+  const tapEl = document.getElementById('tap');
+  if (lastTap && t - lastTap.t < 0.45) {
+    const p = (t - lastTap.t) / 0.45;
+    tapEl.style.left = lastTap.x + 'px'; tapEl.style.top = lastTap.y + 'px';
+    tapEl.style.opacity = String(1 - p); tapEl.style.transform = `scale(${0.7 + 0.6 * p})`;
+  } else tapEl.style.opacity = '0';
+  // captions
+  for (const [id, a, b] of CAPS) {
+    const c = document.getElementById(id);
+    const vin = ease((t - a) / 0.4), vout = ease((t - (b - 0.3)) / 0.3);
+    c.style.opacity = String(vin * (1 - vout));
+    c.style.transform = `translateY(${24 * (1 - vin) - 16 * vout}px)`;
+  }
+  document.getElementById('c3p').style.opacity = String(ease((t - 11.8) / 0.4));
+  document.getElementById('c4p').style.opacity = String(ease((t - 17.0) / 0.4));
+  // end card
+  const e = ease((t - 17.7) / 0.5);
+  const end = document.getElementById('end');
+  end.style.opacity = String(e);
+  end.style.transform = `scale(${1.04 - 0.04 * e})`;
+}
+window.seek = seek; window.DURATION = DURATION;
+
+// ---------- Start fresh: clear any saved app data, then load the real app ----------
+localStorage.removeItem('seatsync-data-v1');
+const frame = document.getElementById('app');
+frame.addEventListener('load', async () => {
+  doc = frame.contentDocument; win = frame.contentWindow;
+  win.confirm = () => true;
+  await Promise.all([document.fonts.ready, doc.fonts.ready]);
+  seek(0); window.__ready = true;
+});
+frame.src = '../../seatsync/app.html';
+</script>
+</body>
+</html>

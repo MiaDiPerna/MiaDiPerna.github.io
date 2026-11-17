@@ -15,7 +15,7 @@ SeatSync is a phone app for sports operations managers. It adds up ticket sales 
 ## How the app helps
 [THREE POINTS. ONE SENTENCE EACH.]
 - **One live total:** see tickets sold and seats left for every game, across every website, on one screen.
-- **No overselling:** when a seat sells on one website, SeatSync takes it off the others, and it warns you when only 10% of seats are left.
+- **No overselling:** SeatSync warns you when a game has 10% of seats or fewer left, so you can take the last seats off each website before you oversell.
 - **No missed payouts:** SeatSync checks each website's payout against its sales and flags any that don't match.
 
 ## What to do next
@@ -26,4 +26,5 @@ Try SeatSync. One button: **Open SeatSync**, which takes the reader to the app.
 [COLORS, TONE, ANY IMAGE YOU WANT ON IT.]
 - **Colors:** navy and white.
 - **Tone:** calm and plain. It explains, it doesn't sell. No hype words and no made-up numbers.
-- **Image:** the SeatSync Home screen on a phone, showing games with tickets sold and seats left.
+- **Image:** the real SeatSync app inside a phone frame, so visitors can try it on the page.
+- **Video:** a 20-second recording of the real app (`media/ad-app/seatsync-app-ad.mp4`) under the top section.
