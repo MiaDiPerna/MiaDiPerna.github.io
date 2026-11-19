@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Why I Want Anthropic Shares</title>
+  <style>
+    :root {
+      --cream: #F0EEE6;
+      --ink: #141413;
+      --clay: #D97757;
+      --clay-soft: #E8A88E;
+      --stone: #B0AEA5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Moving background: soft clay circles drifting slowly */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      opacity: 0.35;
+      filter: blur(2px);
+      z-index: 0;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    .orb.one   { width: 280px; height: 280px; background: var(--clay);      top: 8%;    left: -60px; }
+    .orb.two   { width: 180px; height: 180px; background: var(--clay-soft); bottom: 10%; right: -40px; animation-duration: 22s; animation-delay: -6s; }
+    .orb.three { width: 110px; height: 110px; background: var(--stone);     top: 55%;   left: 60%;  animation-duration: 15s; animation-delay: -3s; }
+
+    @keyframes drift {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(60px, -40px) scale(1.08); }
+      100% { transform: translate(-30px, 50px) scale(0.95); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orb { animation: none; }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 96px 16px 64px;
+    }
+
+    .eyebrow {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--clay);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: normal;
+      line-height: 1.15;
+      margin-bottom: 32px;
+    }
+
+    p {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .notes {
+      margin-top: 56px;
+      padding-top: 32px;
+      border-top: 1px solid var(--stone);
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: normal;
+      margin-bottom: 24px;
+    }
+
+    .note {
+      background: rgba(255, 255, 255, 0.55);
+      border-left: 4px solid var(--clay);
+      border-radius: 6px;
+      padding: 20px 22px;
+      margin-bottom: 20px;
+    }
+
+    .note h3 {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .note ul {
+      padding-left: 20px;
+    }
+
+    .note li {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+
+  <main>
+    <div class="eyebrow">A personal note</div>
+    <h1>Why I would be interested in buying shares of Anthropic</h1>
+
+    <p>I would be interested in buying shares of Anthropic because I have seen firsthand all that Claude can do.</p>
+
+    <p>I have used Claude to help me build my website, create projects for my classes, and turn my ideas into real, finished work. Every time I use it, I am impressed by how much it understands and how much it can help me accomplish.</p>
+
+    <p>I believe Claude is capable of so much more, and that is why I would want to own a part of the company behind it.</p>
+
+    <p>After looking at Anthropic's revenue over time, I believe its revenue growth is likely to continue. I think this because the models will just continue to get better, and better models will bring in more customers and more revenue.</p>
+
+    <section class="notes">
+      <div class="eyebrow">Class notes</div>
+      <h2>Important notes on going public</h2>
+
+      <div class="note">
+        <h3>Why a company goes public</h3>
+        <ul>
+          <li>To raise a large amount of money for growth, research and computing power.</li>
+          <li>To let founders, employees and early investors sell their shares.</li>
+          <li>To have a public stock price for paying employees in stock, buying other companies and borrowing money.</li>
+          <li>Trade-off: public companies must report their finances every quarter and answer to many shareholders.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Who provides the money and who receives it</h3>
+        <ul>
+          <li><strong>Provides:</strong> investors who buy shares in the IPO.</li>
+          <li><strong>Underwriters</strong> (investment banks) buy the shares and resell them to investors, keeping a fee called the underwriting discount.</li>
+          <li><strong>New (primary) shares:</strong> the money goes to the company.</li>
+          <li><strong>Existing (secondary) shares:</strong> the money goes to the shareholders who sell. The company gets nothing.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>The simple math: who gets the money (before fees)</h3>
+        <ul>
+          <li><strong>Company gets:</strong> new shares sold × IPO price.</li>
+          <li><strong>Selling stockholders get:</strong> their shares sold × IPO price.</li>
+          <li><strong>Total raised:</strong> add the two together.</li>
+          <li>Everyone sells at the same price. The only difference is how many shares each side sells.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Anthropic's IPO by the numbers (from the prospectus)</h3>
+        <ul>
+          <li><strong>Price:</strong> $83 per share. <strong>Ticker:</strong> ANT on the Nasdaq.</li>
+          <li><strong>Anthropic sells</strong> 956,351,354 new shares × $83 = <strong>about $79.4 billion</strong>.</li>
+          <li><strong>Selling stockholders sell</strong> 23,648,646 shares × $83 = <strong>about $1.96 billion</strong>.</li>
+          <li><strong>Total:</strong> 980,000,000 shares = <strong>$81.34 billion</strong> (before fees).</li>
+          <li><strong>Separate private sale:</strong> Google, NVIDIA, AMD, Broadcom, Micron, Microsoft and TSMC are buying about <strong>$26 billion</strong> more at $83 per share.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>IPO underpricing (Anthropic class example)</h3>
+        <ul>
+          <li><strong>IPO price:</strong> $83 per share. <strong>Opening price:</strong> $111.50 per share.</li>
+          <li><strong>First-day pop:</strong> $111.50 − $83 = <strong>$28.50 per share</strong>.</li>
+          <li><strong>Underpricing %:</strong> $28.50 ÷ $83 = <strong>about 34%</strong>.</li>
+          <li><strong>Money left on the table:</strong> $28.50 × number of shares sold. This is money the sellers could have received but the IPO buyers got instead.</li>
+          <li><strong>Anthropic:</strong> 980,000,000 shares × $28.50 = <strong>about $27.9 billion</strong> left on the table.</li>
+          <li><strong>Winners:</strong> investors who got shares at $83. <strong>Losers:</strong> Anthropic and the selling stockholders, who sold for less than the market would pay.</li>
+          <li><strong>Why companies accept it:</strong> it makes sure all shares sell, rewards the big investors who committed early, creates good publicity, and lowers the risk of the stock dropping on day one.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Who invests in IPOs</h3>
+        <ul>
+          <li><strong>Institutions</strong> buy most of the shares: mutual funds, pension funds, hedge funds, sovereign wealth funds, insurance companies and endowments.</li>
+          <li><strong>Individual investors</strong> get a small slice at the IPO price, mostly through brokerages. Most buy once trading starts.</li>
+          <li>Before the IPO, the company pitches its stock to investors in meetings called a <strong>roadshow</strong>.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Why Anthropic may have gone public (beyond money)</h3>
+        <ul>
+          <li>To keep and hire top AI researchers with stock that is easy to sell.</li>
+          <li>To build trust with large business customers and governments.</li>
+          <li>To show transparency, which fits its safety-focused mission.</li>
+          <li>To gain a bigger voice in how AI is regulated.</li>
+          <li>To widen ownership, in line with its status as a public benefit corporation.</li>
+          <li>Key tension: public shareholders often want quick profits, while a safety mission may require moving slowly.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>5 main risk factors for Anthropic</h3>
+        <ul>
+          <li><strong>Models acting on their own:</strong> Claude has done harmful things no one asked for, and this risk may grow as models get more capable.</li>
+          <li><strong>Staying the best:</strong> Anthropic must keep building top models against intense competition.</li>
+          <li><strong>Computing power:</strong> it needs huge amounts of chips and power from a few suppliers, some of which are also its investors.</li>
+          <li><strong>Few big customers:</strong> one customer was 12% of revenue in 2025, and past growth may not continue.</li>
+          <li><strong>Little control for the public:</strong> the Trust and the founders hold most of the voting power.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Why relying on TSMC is risky</h3>
+        <ul>
+          <li>TSMC, in Taiwan, makes most of the world's most advanced AI chips.</li>
+          <li><strong>Threats:</strong> conflict with China, earthquakes and typhoons, power or water outages, and trade restrictions.</li>
+          <li><strong>No quick backup:</strong> new chip factories take years to build.</li>
+          <li><strong>The chain:</strong> TSMC chips → data centers → Claude → revenue. No chips means no new models.</li>
+          <li><strong>Twist:</strong> TSMC is also buying about $500 million of Anthropic stock.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Why TSMC is so far ahead</h3>
+        <ul>
+          <li>Others like Samsung and Intel make advanced chips too, but TSMC leads for the most advanced ones.</li>
+          <li>Decades of experience since 1987, and more working chips per batch (higher yield).</li>
+          <li>Factories cost tens of billions of dollars, and few companies can afford them.</li>
+          <li>It only makes chips, so it doesn't compete with its customers.</li>
+          <li><strong>Snowball effect:</strong> more customers → more money → better factories → better chips → more customers.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Anthropic's 5 classes of shares</h3>
+        <ul>
+          <li>Shares can give <strong>economic rights</strong> (worth money) and <strong>voting rights</strong> (a say in decisions). Anthropic splits them apart.</li>
+          <li><strong>Class A (the public):</strong> worth money, 1 vote per share.</li>
+          <li><strong>Class N (partners like Google and NVIDIA):</strong> worth money, no votes.</li>
+          <li><strong>Class T (Long-Term Benefit Trust):</strong> worth nothing, elects a majority of the board.</li>
+          <li><strong>Class F (the co-founders):</strong> worth nothing, 50.1% of all shareholder votes.</li>
+          <li><strong>Class E (employees):</strong> worth nothing, votes only on a few limited matters.</li>
+          <li><strong>In one line:</strong> the public and partners own the value, while the Trust and the founders hold the control.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>Who gets the ultimate return</h3>
+        <ul>
+          <li><strong>Class A and Class N owners</strong> (the public and big partners) get the money: stock gains, any dividends, and payment if the company is sold.</li>
+          <li><strong>The Trust and the founders' special shares</strong> get no money, only power.</li>
+          <li><strong>Restaurant analogy:</strong> investors own the restaurant and split the profits, while the head chef and manager (the Trust and the founders) decide how it's run.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>What the mission changes</h3>
+        <ul>
+          <li>As a <strong>public benefit corporation</strong>, the board must balance three things: shareholders' money, people affected by Anthropic, and its mission of responsible AI for the long-term benefit of humanity.</li>
+          <li><strong>Money it has given up:</strong> refused uses for autonomous weapons and mass surveillance, released its Mythos model only as a limited preview, and skipped building image and video generation.</li>
+          <li><strong>Safety pauses:</strong> it may delay or stop a model release if tests show risks, and it paused some testing in 2026 after models accessed real computer systems without permission.</li>
+          <li><strong>Accountability:</strong> it must publish a report on its mission every 2 years, and the Trust elects a majority of the board.</li>
+          <li><strong>For investors:</strong> profit won't always win, which may make the stock less appealing to return-focused investors.</li>
+        </ul>
+      </div>
+
+      <div class="note">
+        <h3>When profit and mission conflict, how should it decide?</h3>
+        <ul>
+          <li><strong>The filing's process:</strong> the board decides, using five mission pillars, with no outside scorecard. Courts haven't tested it much.</li>
+          <li><strong>1. Safety lines:</strong> serious, hard-to-undo harms (weapons, surveillance, unsafe models) should be a firm "no," whatever the money.</li>
+          <li><strong>2. Short term vs. long term:</strong> giving up money now can build trust and protect the business later, so mission and profit often agree.</li>
+          <li><strong>3. Gray areas:</strong> the board should explain its reasoning publicly in its 2-year report.</li>
+          <li><strong>Debate question:</strong> if the board grades itself, who holds it accountable? Critics see too much control; supporters say it protects safety from short-term pressure.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="notes">
+      <div class="eyebrow">Final thoughts</div>
+      <h2>My final decision</h2>
+
+      <p>After my final decision in class, I would invest <strong>$5,000</strong> in Anthropic.</p>
+
+      <p>I have seen what Claude can do, and I believe the models will continue to get better, which is why I think Anthropic's revenue growth is likely to continue.</p>
+    </section>
+  </main>
+</body>
+</html>
